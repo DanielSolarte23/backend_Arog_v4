@@ -1,0 +1,86 @@
+---------------CRUD USUARIO------------------
+
+--> Crear usuario
+POST http://localhost:3000/api/usuarios
+{
+  "nombres": "nombreejemplo",
+  "apellidos": "apellidoEjemplo",
+  "nombreDeUsuario": "usuarioEjemplo",
+  "contraseña": "123456",
+  "correoElectronico": "correo@ejemplo.com",
+  "telefono": "123456789",
+  "rol": "administrador"
+}
+
+--> Obtener todos los usuarios
+GET http://localhost:3000/api/usuarios
+
+--> Obtener un usuario específico
+GET http://localhost:3000/api/usuarios/1
+
+PUT http://localhost:3000/api/usuarios/1
+{
+  "nombres": "nombre actualizado",
+  "apellidos": "apellido actualizado"
+}
+
+--> Eliminar usuario
+DELETE http://localhost:3000/api/usuarios/1
+
+------------------------------------------------
+
+---------------CRUD ENCUESTAS-------------------
+
+
+--> Agregar una encuesta
+POST http://localhost:3000/api/encuestas
+
+{
+  "titulo": "Encuesta de Satisfacción",
+  "descripcion": "Evaluación del servicio de recolección",
+  "creadorId": 1,
+  "preguntas": [
+    {
+      "texto": "¿Cómo califica el servicio?",
+      "tipo": "escala",
+      "requerida": true
+    },
+    {
+      "texto": "¿Qué aspectos podríamos mejorar?",
+      "tipo": "opcion_multiple",
+      "opciones": [
+        { "texto": "Puntualidad" },
+        { "texto": "Atención" },
+        { "texto": "Calidad" }
+      ]
+    }
+  ]
+}
+
+--> responder una encuesta
+
+POST http://localhost:3000/api/encuestas/1/responder
+{
+  "usuarioId": 2,
+  "ciudadanoId": 1,
+  "respuestas": [
+    {
+      "preguntaId": 1,
+      "valorEscala": 4
+    },
+    {
+      "preguntaId": 2,
+      "opcionSeleccionadaId": 1
+    }
+  ]
+}
+
+--> Resultados de encuestas
+GET http://localhost:3000/api/encuestas/1/resultados
+
+--> Ver encuestas creadas
+GET http://localhost:3000/api/encuestas/1/resultados
+
+----------------------------------------------------
+
+
