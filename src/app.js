@@ -1,6 +1,7 @@
 const express = require('express');
 const encuestaRoutes = require('./routes/encuestaRoutes');
 const usuariosRoutes = require('./routes/usuarioRoutes')
+const pqrsRoutes = require('./routes/pqrsRoutes')
 const app = express();
 const dotenv = require('dotenv')
 
@@ -10,6 +11,7 @@ dotenv.config()
 // Rutas
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/encuestas', encuestaRoutes);
+app.use('/api/pqrs',pqrsRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {

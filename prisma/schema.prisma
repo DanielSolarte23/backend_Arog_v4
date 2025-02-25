@@ -60,7 +60,6 @@ model Residuos {
   cantidad        Int
   estado          EstadoResiduo
   fechaRegistro   DateTime  @default(now()) @map("fecha_registro")
-
   @@index([tipoDeResiduo])
 }
 
