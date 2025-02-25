@@ -10,6 +10,7 @@ dotenv.config()
 // Rutas
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/encuestas', encuestaRoutes);
+app.use('/api/residuos', residuoRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {
