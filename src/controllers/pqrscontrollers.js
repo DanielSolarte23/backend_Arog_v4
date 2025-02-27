@@ -1,5 +1,4 @@
-import { PrismaClient, CategoriaPqrs, EstadoPqrs } from '@prisma/client';
-
+const { PrismaClient, CategoriaPqrs, EstadoPqrs } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 
@@ -7,51 +6,40 @@ const prisma = new PrismaClient();
 const pqrsController = {
   async crearPqrs(req, res) {
     try {
-      const { descripcion, motivo, categoria, idCiudadano, idUsuarioCreador } = req.body;
+      const { descripcion, motivo, categoria, idCiudadano, idUsuarioCreador, estado } = req.body;
 
- //limite de la descripcion 
       if (!descripcion || descripcion.length < 10 || descripcion.length > 500) {
         return res.status(400).json({ error: 'La descripción debe tener entre 10 y 500 caracteres.' });
       }
 
-  
       if (!motivo || motivo.length < 5 || motivo.length > 200) {
         return res.status(400).json({ error: 'El motivo debe tener entre 5 y 200 caracteres.' });
       }
 
-     //si la categoría es válida
       if (!Object.values(CategoriaPqrs).includes(categoria)) {
-        return res.status(400).json({ error: 'Categoría inválida. Las opciones válidas son: Reclamo, Peticion, Queja, Sugerencia.' });
+        return res.status(400).json({ error: 'Categoría inválida. Opciones: Reclamo, Peticion, Queja, Sugerencia.' });
       }
 
-     //número válido
+      if (!Object.values(EstadoPqrs).includes(estado)) {
+        return res.status(400).json({ error: 'Estado inválido. Opciones: Abierto, En_proceso, Cerrado.' });
+      }
+
       if (!idCiudadano || !Number.isInteger(idCiudadano)) {
         return res.status(400).json({ error: 'El ID del ciudadano es inválido.' });
       }
-
 
       if (!idUsuarioCreador || !Number.isInteger(idUsuarioCreador)) {
         return res.status(400).json({ error: 'El ID del usuario creador es inválido.' });
       }
 
-    //si la categoría existe en la base de datos
-      const categoriaExistente = await prisma.categoriaPqrs.findUnique({
-        where: { nombre: categoria },
-      });
-
-      if (!categoriaExistente) {
-        return res.status(400).json({ error: 'La categoría proporcionada no existe.' });
-      }
-
-      //PQRS en la base de datos
       const nuevoPqrs = await prisma.pqrs.create({
         data: {
-          descripcion: descripcion,
-          motivo: motivo,
-          categoria: categoria, 
-          estado: EstadoPqrs.Abierto, 
-          idCiudadano: idCiudadano,
-          idUsuarioCreador: idUsuarioCreador,
+          descripcion,
+          motivo,
+          categoria,
+          estado,
+          idCiudadano,
+          idUsuarioCreador,
         },
       });
 
@@ -61,11 +49,15 @@ const pqrsController = {
       return res.status(500).json({ error: 'Ocurrió un error al crear el PQRS.' });
     }
   },
+
+
+ // Mostrar un PQRS
+
   async mostrarPqrs(req, res) {
     try {
       const pqrsList = await prisma.pqrs.findMany({
         include: {
-          categoria: true, 
+          
           ciudadano: true,  
           creador: true,    
         }
@@ -165,9 +157,4 @@ async eliminarPqrs(req, res) {
   
 
 
-
-
-
-
-
-export default pqrsController;
+module.exports = pqrsController;

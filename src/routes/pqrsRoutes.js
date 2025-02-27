@@ -2,8 +2,11 @@ const express = require('express');
 const router = express.Router();
 const pqrsController = require('../controllers/pqrscontrollers');
 
-router.post('/', pqrsController);
-router.get('/', pqrsControllermos);
-router.get('/:id', pqrsControllermo);
-router.put('/:id', pqrsControlleractua);
-router.delete('/:id', pqrsControllereli);
+router.post('/', pqrsController.crearPqrs);
+router.get('/', pqrsController.mostrarPqrs);
+router.get('/:id', pqrsController.mostrarPqrsPorId);
+router.put('/:id', pqrsController.actualizarPqrs);
+router.delete('/:id', pqrsController.eliminarPqrs);
+
+
+module.exports = router;

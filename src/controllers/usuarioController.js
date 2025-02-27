@@ -50,9 +50,10 @@ const usuarioController = {
           contraseña: hashedPassword,
           correoElectronico,
           telefono,
-          rol
+          rol: rol.ciudadano // En lugar de "CIUDADANO"
         }
       });
+      
 
       res.status(201).json(usuario);
     } catch (error) {

@@ -84,3 +84,20 @@ GET http://localhost:3000/api/encuestas/1/resultados
 ----------------------------------------------------
 
 
+
+--------------------------------------
+--> Obtener todos pqrs
+GET http://localhost:4000/api/pqrs
+
+--> Obtener un usuario específico
+GET http://localhost:4000/api/pqrs/1
+
+PUT http://localhost:4000/api/pqrs/1
+{
+  "nombres": "nombre actualizado",
+  "apellidos": "apellido actualizado"
+}
+
+--> Eliminar usuario
+DELETE http://localhost:4000/api/pqrs/1
+
