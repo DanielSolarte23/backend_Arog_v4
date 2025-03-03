@@ -12,7 +12,7 @@ model Usuario {
   nombres             String             @db.VarChar(200)
   apellidos           String             @db.VarChar(200)
   contraseña          String             @db.VarChar(255)
-  correoElectronico   String             @map("correo_electronico") @db.VarChar(100)
+  correoElectronico   String             @map("correo_electronico") @db.VarChar(100) @unique
   telefono            String?            @db.VarChar(20)
   rol                 Rol                @default(ciudadano)
 
@@ -21,7 +21,8 @@ model Usuario {
   barrio             String?            @db.VarChar(50)
   historialReciclaje String?            @map("historial_reciclaje") @db.VarChar(100)
   estado             EstadoCiudadano     @default(activo)
-
+  
+googleId            String?            @db.VarChar(100)
   // Relaciones
   encuestasCreadas    Encuesta[]         @relation("EncuestaCreador")
   respuestasEncuestas RespuestaEncuesta[] @relation(name: "UsuarioEncuesta")

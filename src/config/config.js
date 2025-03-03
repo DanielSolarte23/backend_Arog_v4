@@ -7,5 +7,6 @@ module.exports = {
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'tu_super_secreto_refresh',
   JWT_REFRESH_EXPIRATION: process.env.JWT_REFRESH_EXPIRATION || '7d',
   COOKIE_SECRET: process.env.COOKIE_SECRET || 'tu_secreto_cookie',
-  NODE_ENV: process.env.NODE_ENV || 'development'
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  GOOGLE_CLIENT_ID: process.env.CLIENT_ID
 };

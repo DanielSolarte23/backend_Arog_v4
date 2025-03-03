@@ -13,6 +13,7 @@ router.post('/refresh-token', refreshToken, (req, res) => {
     message: 'Token renovado exitosamente' 
   });
 });
+router.get('/verify', authController.verifyToken);
 
 // Rutas protegidas
 router.get('/me', verifyToken, authController.mostrarUsuarioActual);

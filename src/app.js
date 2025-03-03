@@ -3,12 +3,13 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const { COOKIE_SECRET, PORT } = require('./config/config');
-const { auth } = require("express-openid-connect");
-const { config } = require('./config/auth0Config');
+const { COOKIE_SECRET, PORT, JWT_SECRET } = require('./config/config');
+const session = require('express-session');
+const passport = require('passport');
 const encuestaRoutes = require('./routes/encuestaRoutes');
 const usuariosRoutes = require('./routes/usuarioRoutes')
 const authRoutes = require('./routes/authRoutes');
+const oauthRoutes = require('./routes/oauthRoutes');
 const logger = require('morgan');
 
 
@@ -22,8 +23,14 @@ dotenv.config()
 app.use(logger('dev'));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
-console.log("Auth0 Config:", config); // 👀 Verifica si `config` tiene valores correctos
-app.use(auth(config));
+
+app.use(session({
+  secret: process.env.JWT_SECRET || 'your_secret_key', // Usa una variable de entorno
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use(passport.initialize());
 
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
@@ -45,7 +52,7 @@ app.use('/api/auth/register', authLimiter);
 
 // Rutas
 app.use('/api/auth', authRoutes);
-app.use('/api/auth', require('./routes/auth0Routes'));
+app.use('/api/auth', oauthRoutes);
 
 // Manejo de errores 404
 app.use((req, res) => {
