@@ -10,6 +10,9 @@ const encuestaRoutes = require('./routes/encuestaRoutes');
 const usuariosRoutes = require('./routes/usuarioRoutes')
 const authRoutes = require('./routes/authRoutes');
 const oauthRoutes = require('./routes/oauthRoutes');
+const ubicacionesRoutes = require('./routes/ubicacionesRoutes');
+const rutasRoutes = require('./routes/rutasRoutes')
+const vehiculosRoutes = require('./routes/vehiculosRoutes')
 const logger = require('morgan');
 
 
@@ -46,6 +49,9 @@ const authLimiter = rateLimit({
 
 // Rutas
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/ubicaciones', ubicacionesRoutes);
+app.use('/api/rutas', rutasRoutes);
+app.use('/api/autos', vehiculosRoutes)
 app.use('/api/encuestas', encuestaRoutes);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);

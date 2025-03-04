@@ -83,18 +83,47 @@ GET http://localhost:3000/api/encuestas/1/resultados
 
 ----------------------------------------------------
 
+Ubicaciones
+
+http://localhost:3002/api/ubicaciones
+
+{
+  "nombre": "galeria la esmeralda",
+  "latitud": "2.4450675958889403",
+  "longitud": "-76.61579396519906"
+}
 
 
---------------------------------------
---> Obtener todos pqrs
-GET http://localhost:4000/api/pqrs
+vehiculos 
+http://localhost:3002/api/autos
 
---> Obtener un  pqrs específico
-GET http://localhost:4000/api/pqrs/1
+{
+  "modelo": "camioneta",
+  "placa": "CPI681",
+  "marca": "chevrolet"
+}
 
-PUT http://localhost:4000/api/pqrs/1
+ubicaciones
 
 
---> Eliminar 
-DELETE http://localhost:4000/api/pqrs/1
+rutas 
 
+http://localhost:3002/api/rutas
+
+{
+  "nombre": "Ruta Norte",
+  "color": "#FF5733",
+  "horaInicio": "2024-07-05T08:00:00.000Z",
+  "horaFin": "2024-07-05T18:00:00.000Z",
+  "usuarioAsignadoId": 3,
+  "puntos": [
+    {
+      "idUbicacion": 1,
+      "orden": 1
+    },
+    {
+      "idUbicacion": 2,
+      "orden": 2
+    }
+  ]
+}

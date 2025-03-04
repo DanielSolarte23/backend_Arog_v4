@@ -8,37 +8,33 @@ generator client {
 }
 
 model Usuario {
-  id                  Int                @id @default(autoincrement())
-  nombres             String             @db.VarChar(200)
-  apellidos           String             @db.VarChar(200)
-  contraseña          String             @db.VarChar(255)
-  correoElectronico   String             @map("correo_electronico") @db.VarChar(100) @unique
-  telefono            String?            @db.VarChar(20)
-  rol                 Rol                @default(ciudadano)
-
-  // Datos exclusivos de ciudadanos
-  direccion           String?            @db.VarChar(50) 
-  barrio             String?            @db.VarChar(50)
-  historialReciclaje String?            @map("historial_reciclaje") @db.VarChar(100)
-  estado             EstadoCiudadano     @default(activo)
-  
-googleId            String?            @db.VarChar(100)
-  // Relaciones
-  encuestasCreadas    Encuesta[]         @relation("EncuestaCreador")
-  respuestasEncuestas RespuestaEncuesta[] @relation(name: "UsuarioEncuesta")
-  respuestasCiudadano RespuestaEncuesta[] @relation(name: "CiudadanoEncuesta") // Nueva relación
-  incidenciasAsignadas Incidencias[]     @relation("UsuarioAsignado")
-  pqrsCreadas         Pqrs[]            @relation("CreadorPqrs")
-  pqrsModificadas     Pqrs[]            @relation("ModificadorPqrs")
-  pqrsRecibidas       Pqrs[]            @relation("CiudadanoPqrs") // Nueva relación
-  incidenciasCreadas  Incidencias[]     @relation("CreadorIncidencia")
-  incidenciasModificadas Incidencias[]  @relation("ModificadorIncidencia")
-  incidenciasCiudadano  Incidencias[]   @relation("CiudadanoIncidencia") // Nueva relación
-  registrosRecoleccion RegistroDeRecoleccionEnFuentes[] @relation("Responsable")
-  registrosFuente     RegistroDeRecoleccionEnFuentes[] @relation("ResponsableFuente")
-  registrosOperativos RegistroOperativoEnRuta[]
+  id                    Int                             @id @default(autoincrement())
+  nombres               String                          @db.VarChar(200)
+  apellidos             String                          @db.VarChar(200)
+  contraseña            String                          @db.VarChar(255)
+  correoElectronico     String                          @map("correo_electronico") @db.VarChar(100) @unique
+  telefono              String?                         @db.VarChar(20)
+  rol                   Rol                             @default(ciudadano)
+  direccion             String?                         @db.VarChar(50)
+  barrio                String?                         @db.VarChar(50)
+  historialReciclaje    String?                         @map("historial_reciclaje") @db.VarChar(100)
+  estado                EstadoCiudadano                 @default(activo)
+  googleId              String?                         @db.VarChar(100)
+  encuestasCreadas      Encuesta[]                      @relation("EncuestaCreador")
+  respuestasEncuestas   RespuestaEncuesta[]             @relation(name: "UsuarioEncuesta")
+  respuestasCiudadano   RespuestaEncuesta[]             @relation(name: "CiudadanoEncuesta")
+  incidenciasAsignadas  Incidencias[]                   @relation("UsuarioAsignado")
+  pqrsCreadas           Pqrs[]                          @relation("CreadorPqrs")
+  pqrsModificadas       Pqrs[]                          @relation("ModificadorPqrs")
+  pqrsRecibidas         Pqrs[]                          @relation("CiudadanoPqrs")
+  incidenciasCreadas    Incidencias[]                   @relation("CreadorIncidencia")
+  incidenciasModificadas Incidencias[]                   @relation("ModificadorIncidencia")
+  incidenciasCiudadano  Incidencias[]                   @relation("CiudadanoIncidencia")
+  registrosRecoleccion  RegistroDeRecoleccionEnFuentes[] @relation("Responsable")
+  registrosFuente       RegistroDeRecoleccionEnFuentes[] @relation("ResponsableFuente")
+  registrosOperativos   RegistroOperativoEnRuta[]
+  rutaAsignada          Rutas?
 }
-
 enum Rol {
   administrador
   recolector
@@ -294,44 +290,47 @@ enum FrecuenciaPago {
 }
 
 model Ubicaciones {
-  id        Int       @id @default(autoincrement()) @map("id_ubicacion")
-  nombre    String    @db.VarChar(255)
-  latitud   Decimal?  @db.Decimal(10,6)
-  longitud  Decimal?  @db.Decimal(10,6)
-  tipo      TipoUbicacion
-  rutasInicio Rutas[] @relation("InicioRuta")
-  rutasFin    Rutas[] @relation("FinRuta")
-  paradas     Paradas[]
-}
-
-enum TipoUbicacion {
-  parada
-  inicio
-  fin
+  id        Int          @id @default(autoincrement()) @map("id_ubicacion")
+  nombre    String       @db.VarChar(255)
+  latitud   Decimal?     @db.Decimal(10, 8)
+  longitud  Decimal?     @db.Decimal(11, 8)
+  puntosRuta PuntosRuta[]
 }
 
 model Rutas {
-  id        Int         @id @default(autoincrement()) @map("id_ruta")
-  nombre    String      @db.VarChar(255)
-  inicio    Ubicaciones @relation("InicioRuta", fields: [idInicio], references: [id], onDelete: Cascade)
-  idInicio  Int         @map("id_inicio")
-  fin       Ubicaciones @relation("FinRuta", fields: [idFin], references: [id], onDelete: Cascade)
-  idFin     Int         @map("id_fin")
-  paradas   Paradas[]
+  id                Int                  @id @default(autoincrement()) @map("id_ruta")
+  nombre            String               @db.VarChar(255)
+  color             String               @db.VarChar(7)
+  horaInicio        DateTime?            // Hora de inicio de la ruta (opcional)
+  horaFin           DateTime?            // Hora de fin de la ruta (opcional)
+  puntosRuta        PuntosRuta[]
+  vehiculosAsignados VehiculosAsignados[]
+  usuarioAsignadoId Int?                 @unique
+  usuarioAsignado   Usuario?             @relation(fields: [usuarioAsignadoId], references: [id])
 }
 
-model Paradas {
-  ruta       Rutas       @relation(fields: [idRuta], references: [id], onDelete: Cascade)
-  idRuta     Int         @map("id_ruta")
-  ubicacion  Ubicaciones @relation(fields: [idUbicacion], references: [id], onDelete: Cascade)
-  idUbicacion Int        @map("id_ubicacion")
-  orden      Int
-
-  @@id([idRuta, idUbicacion])
+model PuntosRuta {
+  id           Int         @id @default(autoincrement()) @map("id_punto_ruta")
+  ruta         Rutas       @relation(fields: [idRuta], references: [id], onDelete: Cascade)
+  idRuta       Int         @map("id_ruta")
+  ubicacion    Ubicaciones @relation(fields: [idUbicacion], references: [id], onDelete: Cascade)
+  idUbicacion  Int         @map("id_ubicacion")
+  orden        Int
 }
 
-model Autos {
-  id     Int     @id @default(autoincrement()) @map("id_auto")
-  modelo String  @db.VarChar(50)
-  placa  String  @unique @db.VarChar(20)
+model Vehiculos {
+  id                Int                  @id @default(autoincrement()) @map("id_auto")
+  modelo            String               @db.VarChar(50)
+  placa             String               @unique @db.VarChar(20)
+  marca             String               @db.VarChar(50)
+  vehiculosAsignados VehiculosAsignados[]
+}
+
+model VehiculosAsignados {
+  id              Int       @id @default(autoincrement()) @map("id_vehiculo_asignado")
+  vehiculo        Vehiculos @relation(fields: [idVehiculo], references: [id], onDelete: Cascade)
+  idVehiculo      Int       @map("id_vehiculo")
+  ruta            Rutas     @relation(fields: [idRuta], references: [id], onDelete: Cascade)
+  idRuta          Int       @map("id_ruta")
+  fechaAsignacion DateTime  @default(now())
 }
