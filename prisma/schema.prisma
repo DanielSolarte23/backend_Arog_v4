@@ -33,7 +33,7 @@ model Usuario {
   registrosRecoleccion  RegistroDeRecoleccionEnFuentes[] @relation("Responsable")
   registrosFuente       RegistroDeRecoleccionEnFuentes[] @relation("ResponsableFuente")
   registrosOperativos   RegistroOperativoEnRuta[]
-  rutaAsignada          Rutas?
+  rutas               Rutas[]
 }
 enum Rol {
   administrador
@@ -298,16 +298,17 @@ model Ubicaciones {
 }
 
 model Rutas {
-  id                Int                  @id @default(autoincrement()) @map("id_ruta")
-  nombre            String               @db.VarChar(255)
-  color             String               @db.VarChar(7)
-  horaInicio        DateTime?            // Hora de inicio de la ruta (opcional)
-  horaFin           DateTime?            // Hora de fin de la ruta (opcional)
-  puntosRuta        PuntosRuta[]
-  vehiculosAsignados VehiculosAsignados[]
-  usuarioAsignadoId Int?                 @unique
-  usuarioAsignado   Usuario?             @relation(fields: [usuarioAsignadoId], references: [id])
+  id                  Int                 @id @default(autoincrement()) @map("id_ruta")
+  nombre              String              @db.VarChar(255)
+  color               String              @db.VarChar(7)
+  horaInicio          DateTime?           // Hora de inicio de la ruta (opcional)
+  horaFin             DateTime?           // Hora de fin de la ruta (opcional)
+  puntosRuta          PuntosRuta[]
+  vehiculosAsignados  VehiculosAsignados[]
+  usuarioAsignadoId   Int?
+  usuarioAsignado     Usuario?            @relation(fields: [usuarioAsignadoId], references: [id])
 }
+
 
 model PuntosRuta {
   id           Int         @id @default(autoincrement()) @map("id_punto_ruta")

@@ -127,3 +127,13 @@ http://localhost:3002/api/rutas
     }
   ]
 }
+
+
+autos 
+http://localhost:3002/api/rutas/asignar-vehiculo
+
+
+{
+  "idRuta":3,
+  "idVehiculo":1
+}
