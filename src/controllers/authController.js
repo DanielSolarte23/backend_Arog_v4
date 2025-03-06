@@ -123,7 +123,7 @@ const inicio = async (req, res) => {
 
     // Crear tokens JWT
     const token = jwt.sign(
-      { id: user.id, rol: user.rol },
+      { id: user.id, rol: user.rol, },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRATION }
     );
