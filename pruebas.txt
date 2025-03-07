@@ -137,3 +137,61 @@ http://localhost:3002/api/rutas/asignar-vehiculo
   "idRuta":3,
   "idVehiculo":1
 }
+
+
+Formulario Tipo 
+
+http://localhost:3002/api/formulariosTipo
+
+{
+  "nombre": "Registro Operativo en Ruta",
+  "descripcion": "Formulario para registrar operaciones realizadas durante el recorrido de una ruta",
+  "creadorId": 1,
+  "campos": [
+    {
+      "nombre": "Item",
+      "descripcion": "Número secuencial del registro",
+      "tipo": "numero",
+      "requerido": true
+    },
+    {
+      "nombre": "Barrio o Vereda",
+      "descripcion": "Barrio o vereda donde se realiza la recolección",
+      "tipo": "texto",
+      "requerido": true
+    },
+    {
+      "nombre": "Inicio de Recorrido",
+      "descripcion": "Fecha y hora de inicio del recorrido",
+      "tipo": "fecha_hora",
+      "requerido": true
+    },
+    {
+      "nombre": "Fin de Recorrido",
+      "descripcion": "Fecha y hora de finalización del recorrido",
+      "tipo": "fecha_hora",
+      "requerido": true
+    },
+    {
+      "nombre": "Número de Casas Visitadas",
+      "descripcion": "Cantidad de casas visitadas durante el recorrido",
+      "tipo": "numero",
+      "requerido": true
+    },
+    {
+      "nombre": "Total Residuos Recolectados (kg)",
+      "descripcion": "Cantidad total de residuos recolectados en kilogramos",
+      "tipo": "decimal",
+      "requerido": true
+    },
+    {
+      "nombre": "Observaciones",
+      "descripcion": "Observaciones o notas adicionales sobre el recorrido",
+      "tipo": "textarea",
+      "requerido": false
+    }
+  ]
+}
+
+furmulario, segun tipo 
+
