@@ -11,12 +11,13 @@ const usuariosRoutes = require('./routes/usuarioRoutes')
 const authRoutes = require('./routes/authRoutes');
 const oauthRoutes = require('./routes/oauthRoutes');
 const ubicacionesRoutes = require('./routes/ubicacionesRoutes');
-const rutasRoutes = require('./routes/rutasRoutes')
-const vehiculosRoutes = require('./routes/vehiculosRoutes')
-const formularioTipoRoutes = require('./routes/formularioTipoRoutes')
-const formularioRoutes = require('./routes/formularioRoutes')
-const logger = require('morgan');
+const rutasRoutes = require('./routes/rutasRoutes');
+const vehiculosRoutes = require('./routes/vehiculosRoutes');
+const formularioTipoRoutes = require('./routes/formularioTipoRoutes');
+const formularioRoutes = require('./routes/formularioRoutes');
+const incidenciaRoutes = require('./routes/incidencias.Routes')
 
+const logger = require('morgan');
 
 const dotenv = require('dotenv')
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/formulariosTipo', formularioTipoRoutes)
 app.use('/api/formularios', formularioRoutes)
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+app.use('/api/incidencias', incidenciaRoutes)
 
 // Rutas
 app.use('/api/auth', authRoutes);
