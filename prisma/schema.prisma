@@ -30,10 +30,11 @@ model Usuario {
   incidenciasCreadas    Incidencias[]                   @relation("CreadorIncidencia")
   incidenciasModificadas Incidencias[]                   @relation("ModificadorIncidencia")
   incidenciasCiudadano  Incidencias[]                   @relation("CiudadanoIncidencia")
-  registrosRecoleccion  RegistroDeRecoleccionEnFuentes[] @relation("Responsable")
-  registrosFuente       RegistroDeRecoleccionEnFuentes[] @relation("ResponsableFuente")
-  registrosOperativos   RegistroOperativoEnRuta[]
-  rutaAsignada          Rutas?
+  rutas               Rutas[]
+  formularioTiposCreados    FormularioTipo[]   @relation("CreadorFormularioTipo")
+  formulariosCreados        Formulario[]       @relation("CreadorFormulario")
+  tareasAsignadas           Tarea[]            @relation("TareaAsignado")
+  tareasCreadas             Tarea[]            @relation("TareaCreador")
 }
 enum Rol {
   administrador
@@ -181,31 +182,92 @@ enum EstadoPqrs {
   Cerrado
 }
 
-model RegistroDeRecoleccionEnFuentes {
-  id                  Int      @id @default(autoincrement())
-  fecha               DateTime @db.Date
-  recipiente          String   @db.VarChar(100)
-  pesoVacio          Decimal  @map("peso_vacio") @db.Decimal(10,5)
-  pesoLleno          Decimal  @map("peso_lleno") @db.Decimal(10,5)
-  observacion         String   @db.Text
-  responsable         Usuario  @relation("Responsable", fields: [idResponsable], references: [id], onDelete: Cascade)
-  idResponsable       Int      @map("id_responsable")
-  responsableFuente   Usuario  @relation("ResponsableFuente", fields: [idResponsableFuente], references: [id], onDelete: Cascade)
-  idResponsableFuente Int      @map("id_responsable_fuente")
+model FormularioTipo {
+  id              Int               @id @default(autoincrement())
+  nombre          String            @db.VarChar(100)
+  descripcion     String?           @db.Text
+  activo          Boolean           @default(true)
+  campos          CampoFormulario[]
+  formularios     Formulario[]
+  creadorId       Int
+  creador         Usuario           @relation("CreadorFormularioTipo", fields: [creadorId], references: [id])
+  fechaCreacion   DateTime          @default(now()) @map("fecha_creacion")
+  
+  @@map("formulario_tipos")
 }
 
-model RegistroOperativoEnRuta {
-  id                     Int      @id @default(autoincrement())
-  item                   Int
-  barrioVereda          String   @map("barrio_vereda") @db.VarChar(200)
-  operario              Usuario  @relation(fields: [idOperario], references: [id], onDelete: Cascade)
-  idOperario            Int      @map("id_operario")
-  nroRuta               Int      @map("nro_ruta")
-  inicioRecorrido       DateTime @map("inicio_recorrido")
-  finRecorrido          DateTime @map("fin_recorrido")
-  nroCasasVisitadas     Int      @map("nro_casas_visitadas")
-  totalResiduosRecolectados Int  @map("total_residuos_recolectados")
-  observacion           String   @db.Text
+// Modelo para definir campos personalizables
+model CampoFormulario {
+  id              Int               @id @default(autoincrement())
+  formularioTipoId Int              
+  formularioTipo  FormularioTipo    @relation(fields: [formularioTipoId], references: [id], onDelete: Cascade)
+  nombre          String            @db.VarChar(100)
+  descripcion     String?           @db.Text
+  tipo            TipoCampo         
+  requerido       Boolean           @default(false)
+  orden           Int
+  opciones        String?           @db.Text  // Opciones en formato JSON para selects, checkboxes, etc.
+  valores         ValorCampo[]
+  
+  @@map("campo_formularios")
+}
+
+enum TipoCampo {
+  texto
+  numero
+  decimal
+  fecha
+  hora
+  fecha_hora
+  select
+  checkbox
+  radio
+  textarea
+  archivo
+  ubicacion
+}
+
+// Instancia de formulario
+model Formulario {
+  id              Int               @id @default(autoincrement())
+  formularioTipoId Int
+  formularioTipo  FormularioTipo    @relation(fields: [formularioTipoId], references: [id])
+  titulo          String            @db.VarChar(200)
+  descripcion     String?           @db.Text
+  estado          EstadoFormulario  @default(borrador)
+  valores         ValorCampo[]
+  rutaId          Int?
+  ruta            Rutas?            @relation("FormularioRuta", fields: [rutaId], references: [id])
+  creadorId       Int
+  creador         Usuario           @relation("CreadorFormulario", fields: [creadorId], references: [id])
+  fechaCreacion   DateTime          @default(now()) @map("fecha_creacion")
+  fechaEnvio      DateTime?         @map("fecha_envio")
+  tareaId         Int?              @unique
+  tarea           Tarea?            @relation(fields: [tareaId], references: [id])
+  
+  @@map("formularios")
+}
+
+enum EstadoFormulario {
+  borrador
+  enviado
+  aprobado
+  rechazado
+}
+
+// Valores de campos específicos para cada formulario
+model ValorCampo {
+  id                Int               @id @default(autoincrement())
+  formularioId      Int
+  formulario        Formulario        @relation(fields: [formularioId], references: [id], onDelete: Cascade)
+  campoFormularioId Int
+  campoFormulario   CampoFormulario   @relation(fields: [campoFormularioId], references: [id])
+  valorTexto        String?           @db.Text
+  valorNumero       Int?
+  valorDecimal      Decimal?          @db.Decimal(10, 5)
+  valorFecha        DateTime?
+  
+  @@map("valor_campos")
 }
 
 model Multimedia {
@@ -289,6 +351,43 @@ enum FrecuenciaPago {
   anual
 }
 
+// Sistema de tareas
+model Tarea {
+  id              Int              @id @default(autoincrement())
+  titulo          String           @db.VarChar(200)
+  descripcion     String?          @db.Text
+  estado          EstadoTarea      @default(pendiente)
+  prioridad       PrioridadTarea   @default(media)
+  asignadoId      Int
+  asignado        Usuario          @relation("TareaAsignado", fields: [asignadoId], references: [id])
+  creadorId       Int
+  creador         Usuario          @relation("TareaCreador", fields: [creadorId], references: [id])
+  fechaCreacion   DateTime         @default(now()) @map("fecha_creacion")
+  fechaLimite     DateTime?        @map("fecha_limite")
+  fechaCompletada DateTime?        @map("fecha_completada")
+  archivada       Boolean @default(false)  
+  rutaId          Int?
+  ruta            Rutas?           @relation("TareaRuta", fields: [rutaId], references: [id])
+  formulario      Formulario?
+
+  @@map("tareas")
+}
+
+enum EstadoTarea {
+  pendiente
+  en_progreso
+  completada
+  cancelada
+}
+
+enum PrioridadTarea {
+  baja
+  media
+  alta
+  urgente
+}
+
+
 model Ubicaciones {
   id        Int          @id @default(autoincrement()) @map("id_ubicacion")
   nombre    String       @db.VarChar(255)
@@ -298,16 +397,21 @@ model Ubicaciones {
 }
 
 model Rutas {
-  id                Int                  @id @default(autoincrement()) @map("id_ruta")
-  nombre            String               @db.VarChar(255)
-  color             String               @db.VarChar(7)
-  horaInicio        DateTime?            // Hora de inicio de la ruta (opcional)
-  horaFin           DateTime?            // Hora de fin de la ruta (opcional)
-  puntosRuta        PuntosRuta[]
-  vehiculosAsignados VehiculosAsignados[]
-  usuarioAsignadoId Int?                 @unique
-  usuarioAsignado   Usuario?             @relation(fields: [usuarioAsignadoId], references: [id])
+  id                  Int                 @id @default(autoincrement()) @map("id_ruta")
+  nombre              String              @db.VarChar(255)
+  color               String              @db.VarChar(7)
+  horaInicio          DateTime?           // Hora de inicio de la ruta (opcional)
+  horaFin             DateTime?           // Hora de fin de la ruta (opcional)
+  puntosRuta          PuntosRuta[]
+  vehiculosAsignados  VehiculosAsignados[]
+  usuarioAsignadoId   Int?
+  usuarioAsignado     Usuario?            @relation(fields: [usuarioAsignadoId], references: [id])
+  
+  // Nuevas relaciones
+  formularios         Formulario[]        @relation("FormularioRuta")
+  tareas              Tarea[]             @relation("TareaRuta")
 }
+
 
 model PuntosRuta {
   id           Int         @id @default(autoincrement()) @map("id_punto_ruta")
