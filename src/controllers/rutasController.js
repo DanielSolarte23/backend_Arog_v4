@@ -106,7 +106,7 @@ exports.createRuta = async (req, res) => {
       // Si se proporcionaron formularios, conectarlos a la ruta
       if (formularios && Array.isArray(formularios)) {
         await Promise.all(formularios.map(async (formularioId) => {
-          await prisma.formularioTipo.update({
+          await prisma.formulario.update({
             where: { id: Number(formularioId) },
             data: {
               ruta: { // Cambiado 'rutas' a 'ruta'

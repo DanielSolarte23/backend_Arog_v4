@@ -238,3 +238,41 @@ ej- formulario Operativo en ruta
 }
 
 
+[
+  {
+    "id": 1,
+    "nombre": "galeria la esmeralda",
+    "latitud": "2.4450676",
+    "longitud": "-76.61579397"
+  },
+  {
+    "id": 2,
+    "nombre": "Galeria Bolivar",
+    "latitud": "2.44736719",
+    "longitud": "-76.60295053"
+  },
+  {
+    "id": 3,
+    "nombre": "Aida Lucia",
+    "latitud": "2.45975309",
+    "longitud": "-76.5817314"
+  },
+  {
+    "id": 4,
+    "nombre": "Galeria las palmas",
+    "latitud": "2.45117103",
+    "longitud": "-76.63302256"
+  },
+  {
+    "id": 5,
+    "nombre": "Galeria la 13",
+    "latitud": "2.4352293",
+    "longitud": "-76.60885815"
+  },
+  {
+    "id": 6,
+    "nombre": "Galeria Bello horizonte",
+    "latitud": "2.48480349",
+    "longitud": "-76.56860827"
+  }
+]
