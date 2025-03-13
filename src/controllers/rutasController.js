@@ -19,8 +19,7 @@ exports.getAllRutas = async (req, res) => {
           }
         },
         usuarioAsignado: true,
-        // Incluir nuevas relaciones
-        formularios: true,
+        formularioTipo: true,
         tareas: true
       }
     });
@@ -52,7 +51,7 @@ exports.getRutaById = async (req, res) => {
         },
         usuarioAsignado: true,
         // Incluir nuevas relaciones
-        formularios: true,
+        formularioTipo: true,
         tareas: true
       }
     });
@@ -67,13 +66,12 @@ exports.getRutaById = async (req, res) => {
   }
 };
 
-// Crear una nueva ruta
 exports.createRuta = async (req, res) => {
   try {
-    const { nombre, color, horaInicio, horaFin, usuarioAsignadoId, puntos, formularios, tareas } = req.body;
+    const { nombre,  horaInicio, horaFin, usuarioAsignadoId, puntos, formularioTipoId, tareas } = req.body;
 
     // Validación básica
-    if (!nombre || !color) {
+    if (!nombre ) {
       return res.status(400).json({ error: 'El nombre y el color de la ruta son requeridos' });
     }
 
@@ -83,11 +81,11 @@ exports.createRuta = async (req, res) => {
       const ruta = await prisma.rutas.create({
         data: {
           nombre,
-          color,
           horaInicio: horaInicio ? new Date(horaInicio) : null,
           horaFin: horaFin ? new Date(horaFin) : null,
-          usuarioAsignadoId: usuarioAsignadoId ? Number(usuarioAsignadoId) : null
-        }
+          usuarioAsignadoId: usuarioAsignadoId ? Number(usuarioAsignadoId) : null,
+          formularioTipoId: formularioTipoId ? Number(formularioTipoId) : null, // Asociar el tipo de formulario
+        },
       });
 
       // Si se proporcionaron puntos de ruta, crearlos
@@ -97,22 +95,8 @@ exports.createRuta = async (req, res) => {
             data: {
               idRuta: ruta.id,
               idUbicacion: Number(punto.idUbicacion),
-              orden: punto.orden || index + 1
-            }
-          });
-        }));
-      }
-
-      // Si se proporcionaron formularios, conectarlos a la ruta
-      if (formularios && Array.isArray(formularios)) {
-        await Promise.all(formularios.map(async (formularioId) => {
-          await prisma.formulario.update({
-            where: { id: Number(formularioId) },
-            data: {
-              ruta: { // Cambiado 'rutas' a 'ruta'
-                connect: { id: ruta.id }
-              }
-            }
+              orden: punto.orden || index + 1,
+            },
           });
         }));
       }
@@ -124,9 +108,9 @@ exports.createRuta = async (req, res) => {
             where: { id: Number(tareaId) },
             data: {
               rutas: {
-                connect: { id: ruta.id }
-              }
-            }
+                connect: { id: ruta.id },
+              },
+            },
           });
         }));
       }
@@ -150,16 +134,16 @@ exports.createRuta = async (req, res) => {
         include: {
           puntosRuta: {
             include: {
-              ubicacion: true
+              ubicacion: true,
             },
             orderBy: {
-              orden: 'asc'
-            }
+              orden: 'asc',
+            },
           },
           usuarioAsignado: true,
-          formularios: true,
-          tareas: true
-        }
+          formularioTipo: true, // Incluir el tipo de formulario
+          tareas: true,
+        },
       });
     });
 
@@ -169,15 +153,14 @@ exports.createRuta = async (req, res) => {
   }
 };
 
-// Actualizar una ruta
 exports.updateRuta = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, color, horaInicio, horaFin, usuarioAsignadoId, puntos, formularios, tareas } = req.body;
+    const { nombre,  horaInicio, horaFin, usuarioAsignadoId, puntos, formularioTipoId, tareas } = req.body;
 
     // Verificar si la ruta existe
     const rutaExistente = await prisma.rutas.findUnique({
-      where: { id: Number(id) }
+      where: { id: Number(id) },
     });
 
     if (!rutaExistente) {
@@ -191,18 +174,18 @@ exports.updateRuta = async (req, res) => {
         where: { id: Number(id) },
         data: {
           nombre: nombre || rutaExistente.nombre,
-          color: color || rutaExistente.color,
           horaInicio: horaInicio ? new Date(horaInicio) : rutaExistente.horaInicio,
           horaFin: horaFin ? new Date(horaFin) : rutaExistente.horaFin,
-          usuarioAsignadoId: usuarioAsignadoId !== undefined ? Number(usuarioAsignadoId) : rutaExistente.usuarioAsignadoId
-        }
+          usuarioAsignadoId: usuarioAsignadoId !== undefined ? Number(usuarioAsignadoId) : rutaExistente.usuarioAsignadoId,
+          formularioTipoId: formularioTipoId !== undefined ? Number(formularioTipoId) : rutaExistente.formularioTipoId, // Actualizar el tipo de formulario
+        },
       });
 
       // Si se proporcionaron puntos de ruta, actualizar los puntos
       if (puntos && Array.isArray(puntos)) {
         // Opcional: eliminar los puntos existentes para reemplazarlos
         await prisma.puntosRuta.deleteMany({
-          where: { idRuta: Number(id) }
+          where: { idRuta: Number(id) },
         });
 
         // Crear los nuevos puntos
@@ -211,33 +194,8 @@ exports.updateRuta = async (req, res) => {
             data: {
               idRuta: Number(id),
               idUbicacion: Number(punto.idUbicacion),
-              orden: punto.orden || index + 1
-            }
-          });
-        }));
-      }
-
-      // Si se proporcionaron formularios, actualizar las relaciones
-      if (formularios && Array.isArray(formularios)) {
-        // Desconectar todos los formularios existentes
-        await prisma.rutas.update({
-          where: { id: Number(id) },
-          data: {
-            formularios: {
-              set: [] // Eliminar todas las relaciones existentes
-            }
-          }
-        });
-
-        // Conectar los nuevos formularios
-        await Promise.all(formularios.map(async (formularioId) => {
-          await prisma.formulario.update({
-            where: { id: Number(formularioId) },
-            data: {
-              rutas: {
-                connect: { id: Number(id) }
-              }
-            }
+              orden: punto.orden || index + 1,
+            },
           });
         }));
       }
@@ -249,9 +207,9 @@ exports.updateRuta = async (req, res) => {
           where: { id: Number(id) },
           data: {
             tareas: {
-              set: [] // Eliminar todas las relaciones existentes
-            }
-          }
+              set: [], // Eliminar todas las relaciones existentes
+            },
+          },
         });
 
         // Conectar las nuevas tareas
@@ -260,9 +218,9 @@ exports.updateRuta = async (req, res) => {
             where: { id: Number(tareaId) },
             data: {
               rutas: {
-                connect: { id: Number(id) }
-              }
-            }
+                connect: { id: Number(id) },
+              },
+            },
           });
         }));
       }
@@ -273,21 +231,21 @@ exports.updateRuta = async (req, res) => {
         include: {
           puntosRuta: {
             include: {
-              ubicacion: true
+              ubicacion: true,
             },
             orderBy: {
-              orden: 'asc'
-            }
+              orden: 'asc',
+            },
           },
           vehiculosAsignados: {
             include: {
-              vehiculo: true
-            }
+              vehiculo: true,
+            },
           },
           usuarioAsignado: true,
-          formularios: true,
-          tareas: true
-        }
+          formularioTipo: true, // Incluir el tipo de formulario
+          tareas: true,
+        },
       });
     });
 
@@ -322,40 +280,56 @@ exports.deleteRuta = async (req, res) => {
   }
 };
 
-// Asignar vehículo a una ruta
+// Asignar o actualizar vehículo a una ruta
 exports.asignarVehiculo = async (req, res) => {
   try {
     const { idRuta, idVehiculo } = req.body;
 
     if (!idRuta || !idVehiculo) {
-      return res.status(400).json({ error: 'Se requieren el ID de la ruta y el ID del vehículo' });
+      return res
+        .status(400)
+        .json({
+          error: "Se requieren el ID de la ruta y el ID del vehículo",
+        });
     }
 
     // Verificar si la ruta y el vehículo existen
-    const ruta = await prisma.rutas.findUnique({ where: { id: Number(idRuta) } });
-    const vehiculo = await prisma.vehiculos.findUnique({ where: { id: Number(idVehiculo) } });
+    const ruta = await prisma.rutas.findUnique({
+      where: { id: Number(idRuta) },
+    });
+    const vehiculo = await prisma.vehiculos.findUnique({
+      where: { id: Number(idVehiculo) },
+    });
 
     if (!ruta) {
-      return res.status(404).json({ error: 'Ruta no encontrada' });
+      return res.status(404).json({ error: "Ruta no encontrada" });
     }
 
     if (!vehiculo) {
-      return res.status(404).json({ error: 'Vehículo no encontrado' });
+      return res.status(404).json({ error: "Vehículo no encontrado" });
     }
 
-    // Crear la asignación
-    const asignacion = await prisma.vehiculosAsignados.create({
-      data: {
-        idRuta: Number(idRuta),
-        idVehiculo: Number(idVehiculo)
-      },
-      include: {
-        ruta: true,
-        vehiculo: true
-      }
+    // Verificar si ya existe una asignación para esta ruta
+    const asignacionExistente = await prisma.vehiculosAsignados.findFirst({
+      where: { idRuta: Number(idRuta) },
     });
 
-    res.status(201).json(asignacion);
+    if (asignacionExistente) {
+      // Actualizar la asignación existente
+      const asignacionActualizada = await prisma.vehiculosAsignados.update({
+        where: { id: asignacionExistente.id },
+        data: { idVehiculo: Number(idVehiculo) },
+        include: { ruta: true, vehiculo: true },
+      });
+      res.status(200).json(asignacionActualizada);
+    } else {
+
+      const asignacion = await prisma.vehiculosAsignados.create({
+        data: { idRuta: Number(idRuta), idVehiculo: Number(idVehiculo) },
+        include: { ruta: true, vehiculo: true },
+      });
+      res.status(201).json(asignacion);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

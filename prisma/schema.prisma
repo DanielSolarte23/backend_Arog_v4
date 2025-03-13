@@ -1,5 +1,5 @@
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -192,7 +192,7 @@ model FormularioTipo {
   creadorId       Int
   creador         Usuario           @relation("CreadorFormularioTipo", fields: [creadorId], references: [id])
   fechaCreacion   DateTime          @default(now()) @map("fecha_creacion")
-  
+  rutas           Rutas[] // Nueva relación
   @@map("formulario_tipos")
 }
 
@@ -229,22 +229,19 @@ enum TipoCampo {
 
 // Instancia de formulario
 model Formulario {
-  id              Int               @id @default(autoincrement())
+  id               Int                @id @default(autoincrement())
   formularioTipoId Int
-  formularioTipo  FormularioTipo    @relation(fields: [formularioTipoId], references: [id])
-  titulo          String            @db.VarChar(200)
-  descripcion     String?           @db.Text
-  estado          EstadoFormulario  @default(borrador)
-  valores         ValorCampo[]
-  rutaId          Int?
-  ruta            Rutas?            @relation("FormularioRuta", fields: [rutaId], references: [id])
-  creadorId       Int
-  creador         Usuario           @relation("CreadorFormulario", fields: [creadorId], references: [id])
-  fechaCreacion   DateTime          @default(now()) @map("fecha_creacion")
-  fechaEnvio      DateTime?         @map("fecha_envio")
-  tareaId         Int?              @unique
-  tarea           Tarea?            @relation(fields: [tareaId], references: [id])
-  
+  formularioTipo   FormularioTipo     @relation(fields: [formularioTipoId], references: [id])
+  titulo           String             @db.VarChar(200)
+  descripcion      String?            @db.Text
+  estado           EstadoFormulario   @default(borrador)
+  valores          ValorCampo[]
+  creadorId        Int
+  creador          Usuario            @relation("CreadorFormulario", fields: [creadorId], references: [id])
+  fechaCreacion    DateTime           @default(now()) @map("fecha_creacion")
+  fechaEnvio       DateTime?          @map("fecha_envio")
+  tareaId          Int?               @unique
+  tarea            Tarea?             @relation(fields: [tareaId], references: [id])
   @@map("formularios")
 }
 
@@ -399,19 +396,16 @@ model Ubicaciones {
 model Rutas {
   id                  Int                 @id @default(autoincrement()) @map("id_ruta")
   nombre              String              @db.VarChar(255)
-  color               String              @db.VarChar(7)
-  horaInicio          DateTime?           // Hora de inicio de la ruta (opcional)
-  horaFin             DateTime?           // Hora de fin de la ruta (opcional)
+  horaInicio          DateTime?          
+  horaFin             DateTime?           
   puntosRuta          PuntosRuta[]
   vehiculosAsignados  VehiculosAsignados[]
   usuarioAsignadoId   Int?
   usuarioAsignado     Usuario?            @relation(fields: [usuarioAsignadoId], references: [id])
-  
-  // Nuevas relaciones
-  formularios         Formulario[]        @relation("FormularioRuta")
   tareas              Tarea[]             @relation("TareaRuta")
+  formularioTipoId    Int? // Nueva relación
+  formularioTipo      FormularioTipo?     @relation(fields: [formularioTipoId], references: [id]) // Nueva relación
 }
-
 
 model PuntosRuta {
   id           Int         @id @default(autoincrement()) @map("id_punto_ruta")
