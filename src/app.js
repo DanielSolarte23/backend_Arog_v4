@@ -15,6 +15,7 @@ const rutasRoutes = require('./routes/rutasRoutes')
 const vehiculosRoutes = require('./routes/vehiculosRoutes')
 const formularioTipoRoutes = require('./routes/formularioTipoRoutes')
 const formularioRoutes = require('./routes/formularioRoutes')
+const tareaRoutes = require('./routes/tareaRoutes')
 const logger = require('morgan');
 
 
@@ -55,6 +56,7 @@ app.use('/api/ubicaciones', ubicacionesRoutes);
 app.use('/api/rutas', rutasRoutes);
 app.use('/api/autos', vehiculosRoutes)
 app.use('/api/encuestas', encuestaRoutes);
+app.use('/api/tareas', tareaRoutes);
 app.use('/api/formulariosTipo', formularioTipoRoutes)
 app.use('/api/formularios', formularioRoutes)
 app.use('/api/auth/login', authLimiter);

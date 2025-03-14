@@ -115,7 +115,7 @@ http://localhost:3002/api/rutas
   "color": "#FF5733",
   "horaInicio": "2024-07-05T08:00:00.000Z",
   "horaFin": "2024-07-05T18:00:00.000Z",
-  "usuarioAsignadoId": 3,
+  "usuarioAsignadoId": 3, 
   "puntos": [
     {
       "idUbicacion": 1,
@@ -276,3 +276,43 @@ ej- formulario Operativo en ruta
     "longitud": "-76.56860827"
   }
 ]
+tareas
+
+*Agregar Tarea*
+http://localhost:3002/api/tareas
+
+{
+  "titulo": "Revisar Documentación",
+  "descripcion": "Revisar la documentación técnica del proyecto.",
+  "asignadoId": 1,
+  "creadorId": 1,
+  "fechaLimite": "2024-12-31T17:00:00.000Z",
+  "prioridad": "alta",
+  "rutaId": 1,
+  "estado": "en_progreso",
+  "archivada": false
+}
+
+
+*Agregar Tarea*
+http://localhost:3002/api/tareas-con-formulario
+
+{
+  "titulo": "Inspección de Seguridad 2",
+  "descripcion": "Realizar una inspección de seguridad en el sitio.",
+  "asignadoId": 1,
+  "creadorId": 1,
+  "fechaLimite": "2024-11-30T12:00:00.000Z",
+  "prioridad": "media",
+  "rutaId": 2,
+  "formularioId": 1,
+  "estado": "pendiente",
+  "archivada": false
+}
+
+http://localhost:3002/api/tareas
+
+
+
+*Mostrar tareas asociadas a un usuario*
+http://localhost:3002/api/tareas/usuario/1

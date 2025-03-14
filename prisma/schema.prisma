@@ -1,47 +1,329 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model Usuario {
+  id                     Int                 @id @default(autoincrement())
+  nombres                String              @db.VarChar(200)
+  apellidos              String              @db.VarChar(200)
+  contraseña            String              @db.VarChar(255)
+  correoElectronico      String              @unique @map("correo_electronico") @db.VarChar(100)
+  telefono               String?             @db.VarChar(20)
+  rol                    Rol                 @default(ciudadano)
+  direccion              String?             @db.VarChar(50)
+  barrio                 String?             @db.VarChar(50)
+  historialReciclaje     String?             @map("historial_reciclaje") @db.VarChar(100)
+  estado                 EstadoCiudadano     @default(activo)
+  googleId               String?             @db.VarChar(100)
+  incidenciasCiudadano   Incidencias[]       @relation("CiudadanoIncidencia")
+  incidenciasCreadas     Incidencias[]       @relation("CreadorIncidencia")
+  incidenciasAsignadas   Incidencias[]       @relation("UsuarioAsignado")
+  incidenciasModificadas Incidencias[]       @relation("ModificadorIncidencia")
+  pqrsRecibidas          Pqrs[]              @relation("CiudadanoPqrs")
+  pqrsCreadas            Pqrs[]              @relation("CreadorPqrs")
+  pqrsModificadas        Pqrs[]              @relation("ModificadorPqrs")
+  rutas                  Rutas[]
+  encuestasCreadas       Encuesta[]          @relation("EncuestaCreador")
+  formularioTiposCreados FormularioTipo[]    @relation("CreadorFormularioTipo")
+  formulariosCreados     Formulario[]        @relation("CreadorFormulario")
+  respuestasCiudadano    RespuestaEncuesta[] @relation("CiudadanoEncuesta")
+  respuestasEncuestas    RespuestaEncuesta[] @relation("UsuarioEncuesta")
+  tareasAsignadas        Tarea[]             @relation("TareaAsignado")
+  tareasCreadas          Tarea[]             @relation("TareaCreador")
 }
 
-model Usuario {
-  id                    Int                             @id @default(autoincrement())
-  nombres               String                          @db.VarChar(200)
-  apellidos             String                          @db.VarChar(200)
-  contraseña            String                          @db.VarChar(255)
-  correoElectronico     String                          @map("correo_electronico") @db.VarChar(100) @unique
-  telefono              String?                         @db.VarChar(20)
-  rol                   Rol                             @default(ciudadano)
-  direccion             String?                         @db.VarChar(50)
-  barrio                String?                         @db.VarChar(50)
-  historialReciclaje    String?                         @map("historial_reciclaje") @db.VarChar(100)
-  estado                EstadoCiudadano                 @default(activo)
-  googleId              String?                         @db.VarChar(100)
-  encuestasCreadas      Encuesta[]                      @relation("EncuestaCreador")
-  respuestasEncuestas   RespuestaEncuesta[]             @relation(name: "UsuarioEncuesta")
-  respuestasCiudadano   RespuestaEncuesta[]             @relation(name: "CiudadanoEncuesta")
-  incidenciasAsignadas  Incidencias[]                   @relation("UsuarioAsignado")
-  pqrsCreadas           Pqrs[]                          @relation("CreadorPqrs")
-  pqrsModificadas       Pqrs[]                          @relation("ModificadorPqrs")
-  pqrsRecibidas         Pqrs[]                          @relation("CiudadanoPqrs")
-  incidenciasCreadas    Incidencias[]                   @relation("CreadorIncidencia")
-  incidenciasModificadas Incidencias[]                   @relation("ModificadorIncidencia")
-  incidenciasCiudadano  Incidencias[]                   @relation("CiudadanoIncidencia")
-  rutas               Rutas[]
-  formularioTiposCreados    FormularioTipo[]   @relation("CreadorFormularioTipo")
-  formulariosCreados        Formulario[]       @relation("CreadorFormulario")
-  tareasAsignadas           Tarea[]            @relation("TareaAsignado")
-  tareasCreadas             Tarea[]            @relation("TareaCreador")
+model Residuos {
+  id            Int           @id @default(autoincrement()) @map("id_residuos")
+  tipoDeResiduo String        @map("tipo_de_residuo") @db.VarChar(100)
+  ubicacion     String        @db.VarChar(100)
+  cantidad      Int
+  estado        EstadoResiduo
+  fechaRegistro DateTime      @default(now()) @map("fecha_registro")
+
+  @@index([tipoDeResiduo])
 }
+
+model Encuesta {
+  id              Int                 @id @default(autoincrement())
+  titulo          String              @db.VarChar(200)
+  descripcion     String?
+  fechaCreacion   DateTime            @default(now())
+  fechaExpiracion DateTime?
+  estado          EstadoEncuesta      @default(activa)
+  creadorId       Int
+  creador         Usuario             @relation("EncuestaCreador", fields: [creadorId], references: [id])
+  preguntas       Pregunta[]
+  respuestas      RespuestaEncuesta[]
+
+  @@map("encuestas")
+}
+
+model Pregunta {
+  id         Int                 @id @default(autoincrement())
+  encuestaId Int
+  texto      String
+  tipo       TipoPregunta
+  requerida  Boolean             @default(true)
+  orden      Int
+  opciones   OpcionPregunta[]
+  encuesta   Encuesta            @relation(fields: [encuestaId], references: [id], onDelete: Cascade)
+  respuestas RespuestaPregunta[]
+
+  @@map("preguntas")
+}
+
+model OpcionPregunta {
+  id         Int                 @id @default(autoincrement())
+  preguntaId Int
+  texto      String              @db.VarChar(200)
+  orden      Int
+  pregunta   Pregunta            @relation(fields: [preguntaId], references: [id], onDelete: Cascade)
+  respuestas RespuestaPregunta[]
+
+  @@map("opciones_preguntas")
+}
+
+model RespuestaEncuesta {
+  id             Int                 @id @default(autoincrement())
+  encuestaId     Int
+  usuarioId      Int
+  ciudadanoId    Int?                @map("ciudadano_id")
+  fechaRespuesta DateTime            @default(now())
+  completada     Boolean             @default(false)
+  ciudadano      Usuario?            @relation("CiudadanoEncuesta", fields: [ciudadanoId], references: [id])
+  encuesta       Encuesta            @relation(fields: [encuestaId], references: [id])
+  usuario        Usuario             @relation("UsuarioEncuesta", fields: [usuarioId], references: [id])
+  respuestas     RespuestaPregunta[]
+
+  @@map("respuestas_encuestas")
+}
+
+model RespuestaPregunta {
+  id                   Int               @id @default(autoincrement())
+  respuestaEncuestaId  Int
+  preguntaId           Int
+  opcionSeleccionadaId Int?
+  textoRespuesta       String?
+  valorEscala          Int?
+  opcionSeleccionada   OpcionPregunta?   @relation(fields: [opcionSeleccionadaId], references: [id])
+  pregunta             Pregunta          @relation(fields: [preguntaId], references: [id])
+  respuestaEncuesta    RespuestaEncuesta @relation(fields: [respuestaEncuestaId], references: [id], onDelete: Cascade)
+
+  @@map("respuestas_preguntas")
+}
+
+model Pqrs {
+  id                   Int           @id @default(autoincrement()) @map("id_solicitud")
+  descripcion          String
+  motivo               String        @db.VarChar(200)
+  categoria            CategoriaPqrs
+  estado               EstadoPqrs    @default(Abierto)
+  seguimiento          String?       @db.VarChar(255)
+  fechaCreacion        DateTime      @default(now()) @map("fecha_creacion")
+  idCiudadano          Int           @map("id_ciudadano")
+  idUsuarioCreador     Int           @map("id_usuario_creador")
+  idUsuarioModificador Int?          @map("id_usuario_modificador")
+  ciudadano            Usuario       @relation("CiudadanoPqrs", fields: [idCiudadano], references: [id], onDelete: Cascade)
+  creador              Usuario       @relation("CreadorPqrs", fields: [idUsuarioCreador], references: [id])
+  modificador          Usuario?      @relation("ModificadorPqrs", fields: [idUsuarioModificador], references: [id])
+
+  @@index([estado, fechaCreacion])
+}
+
+model FormularioTipo {
+  id            Int               @id @default(autoincrement())
+  nombre        String            @db.VarChar(100)
+  descripcion   String?
+  activo        Boolean           @default(true)
+  creadorId     Int
+  fechaCreacion DateTime          @default(now()) @map("fecha_creacion")
+  rutas         Rutas[]
+  campos        CampoFormulario[]
+  creador       Usuario           @relation("CreadorFormularioTipo", fields: [creadorId], references: [id])
+  formularios   Formulario[]
+
+  @@map("formulario_tipos")
+}
+
+model CampoFormulario {
+  id               Int            @id @default(autoincrement())
+  formularioTipoId Int
+  nombre           String         @db.VarChar(100)
+  descripcion      String?
+  tipo             TipoCampo
+  requerido        Boolean        @default(false)
+  orden            Int
+  opciones         String?
+  formularioTipo   FormularioTipo @relation(fields: [formularioTipoId], references: [id], onDelete: Cascade)
+  valores          ValorCampo[]
+
+  @@map("campo_formularios")
+}
+
+model Formulario {
+  id               Int              @id @default(autoincrement())
+  formularioTipoId Int
+  titulo           String           @db.VarChar(200)
+  descripcion      String?
+  estado           EstadoFormulario @default(borrador)
+  creadorId        Int
+  fechaCreacion    DateTime         @default(now()) @map("fecha_creacion")
+  fechaEnvio       DateTime?        @map("fecha_envio")
+  tareaId          Int?             @unique
+  creador          Usuario          @relation("CreadorFormulario", fields: [creadorId], references: [id])
+  formularioTipo   FormularioTipo   @relation(fields: [formularioTipoId], references: [id])
+  tarea            Tarea?           @relation(fields: [tareaId], references: [id])
+  valores          ValorCampo[]
+
+  @@map("formularios")
+}
+
+model ValorCampo {
+  id                Int             @id @default(autoincrement())
+  formularioId      Int
+  campoFormularioId Int
+  valorTexto        String?
+  valorNumero       Int?
+  valorDecimal      Decimal?        @db.Decimal(10, 5)
+  valorFecha        DateTime?
+  campoFormulario   CampoFormulario @relation(fields: [campoFormularioId], references: [id])
+  formulario        Formulario      @relation(fields: [formularioId], references: [id], onDelete: Cascade)
+
+  @@map("valor_campos")
+}
+
+model Multimedia {
+  id            Int     @id @default(autoincrement()) @map("id_multimedia")
+  url           String  @map("url_archivo") @db.VarChar(200)
+  tamanoArchivo Decimal @map("tamano_archivo") @db.Decimal(10, 2)
+}
+
+model Incidencias {
+  id                    Int              @id @default(autoincrement()) @map("id_incidencia")
+  fechaIncidencia       DateTime         @map("fecha_incidencia")
+  tituloIncidencia      String           @map("titulo_incidencia") @db.VarChar(200)
+  descripcionIncidencia String           @map("descripcion_incidencia")
+  tipoIncidencia        String           @map("tipo_incidencia") @db.VarChar(200)
+  estadoIncidencia      EstadoIncidencia @default(abierta) @map("estado_incidencia")
+  idUsuario             Int?             @map("id_usuario")
+  idUsuarioCiudadano    Int?             @map("id_usuario_ciudadano")
+  idUsuarioCreador      Int              @map("id_usuario_creador")
+  idUsuarioModificador  Int?             @map("id_usuario_modificador")
+  ciudadano             Usuario?         @relation("CiudadanoIncidencia", fields: [idUsuarioCiudadano], references: [id])
+  creador               Usuario          @relation("CreadorIncidencia", fields: [idUsuarioCreador], references: [id])
+  usuarioAsignado       Usuario?         @relation("UsuarioAsignado", fields: [idUsuario], references: [id])
+  modificador           Usuario?         @relation("ModificadorIncidencia", fields: [idUsuarioModificador], references: [id])
+}
+
+model Cliente {
+  id            Int      @id @default(autoincrement()) @map("id_cliente")
+  nombre        String   @db.VarChar(100)
+  apellido      String   @db.VarChar(100)
+  correo        String   @unique @db.VarChar(150)
+  telefono      String   @db.VarChar(20)
+  direccion     String?
+  fechaRegistro DateTime @default(now()) @map("fecha_registro")
+  pagos         Pagos[]
+}
+
+model Pagos {
+  id               Int             @id @default(autoincrement()) @map("id_pago")
+  idCliente        Int?            @map("id_cliente")
+  fechaPago        DateTime        @map("fecha_pago") @db.Date
+  descripcion      String?         @db.VarChar(300)
+  montoDeuda       Decimal         @default(0.00) @map("monto_deuda") @db.Decimal(10, 2)
+  valorPago        Decimal         @default(0.00) @map("monto_pago") @db.Decimal(10, 2)
+  saldoPendiente   Decimal         @default(0.00) @map("monto_saldo") @db.Decimal(10, 2)
+  interesMora      Decimal         @default(0.00) @map("interes_mora") @db.Decimal(10, 2)
+  metodoPago       MetodoPago      @map("metodo_pago")
+  diasMora         Int             @default(0) @map("dias_mora")
+  estadoPago       EstadoPago      @default(pendiente) @map("estado_pago")
+  notas            String?         @db.VarChar(255)
+  frecuenciaDePago FrecuenciaPago? @map("frecuencia_de_pago")
+  fechaProximoPago DateTime?       @map("fecha_proximo_pago") @db.Date
+  cliente          Cliente?        @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+}
+
+model Tarea {
+  id              Int            @id @default(autoincrement())
+  titulo          String         @db.VarChar(200)
+  descripcion     String?
+  estado          EstadoTarea    @default(por_hacer)
+  prioridad       PrioridadTarea @default(media)
+  asignadoId      Int
+  creadorId       Int
+  fechaCreacion   DateTime       @default(now()) @map("fecha_creacion")
+  fechaLimite     DateTime?      @map("fecha_limite")
+  fechaCompletada DateTime?      @map("fecha_completada")
+  archivada       Boolean        @default(false)
+  rutaId          Int?
+  formulario      Formulario?
+  asignado        Usuario        @relation("TareaAsignado", fields: [asignadoId], references: [id])
+  creador         Usuario        @relation("TareaCreador", fields: [creadorId], references: [id])
+  ruta            Rutas?         @relation("TareaRuta", fields: [rutaId], references: [id])
+
+  @@map("tareas")
+}
+
+model Ubicaciones {
+  id         Int          @id @default(autoincrement()) @map("id_ubicacion")
+  nombre     String       @db.VarChar(255)
+  latitud    Decimal?     @db.Decimal(10, 8)
+  longitud   Decimal?     @db.Decimal(11, 8)
+  puntosRuta PuntosRuta[]
+}
+
+model Rutas {
+  id                 Int                  @id @default(autoincrement()) @map("id_ruta")
+  nombre             String               @db.VarChar(255)
+  horaInicio         DateTime?
+  horaFin            DateTime?
+  usuarioAsignadoId  Int?
+  formularioTipoId   Int?
+  puntosRuta         PuntosRuta[]
+  formularioTipo     FormularioTipo?      @relation(fields: [formularioTipoId], references: [id])
+  usuarioAsignado    Usuario?             @relation(fields: [usuarioAsignadoId], references: [id])
+  vehiculosAsignados VehiculosAsignados[]
+  tareas             Tarea[]              @relation("TareaRuta")
+}
+
+model PuntosRuta {
+  id          Int         @id @default(autoincrement()) @map("id_punto_ruta")
+  idRuta      Int         @map("id_ruta")
+  idUbicacion Int         @map("id_ubicacion")
+  orden       Int
+  ruta        Rutas       @relation(fields: [idRuta], references: [id], onDelete: Cascade)
+  ubicacion   Ubicaciones @relation(fields: [idUbicacion], references: [id], onDelete: Cascade)
+}
+
+model Vehiculos {
+  id                 Int                  @id @default(autoincrement()) @map("id_auto")
+  modelo             String               @db.VarChar(50)
+  placa              String               @unique @db.VarChar(20)
+  marca              String               @db.VarChar(50)
+  vehiculosAsignados VehiculosAsignados[]
+}
+
+model VehiculosAsignados {
+  id              Int       @id @default(autoincrement()) @map("id_vehiculo_asignado")
+  idVehiculo      Int       @map("id_vehiculo")
+  idRuta          Int       @map("id_ruta")
+  fechaAsignacion DateTime  @default(now())
+  ruta            Rutas     @relation(fields: [idRuta], references: [id], onDelete: Cascade)
+  vehiculo        Vehiculos @relation(fields: [idVehiculo], references: [id], onDelete: Cascade)
+}
+
 enum Rol {
   administrador
   recolector
   ciudadano
-  encuestador 
-  encuestado 
+  encuestador
+  encuestado
 }
 
 enum EstadoCiudadano {
@@ -49,36 +331,10 @@ enum EstadoCiudadano {
   inactivo
 }
 
-
-model Residuos {
-  id              Int       @id @default(autoincrement()) @map("id_residuos")
-  tipoDeResiduo   String    @map("tipo_de_residuo") @db.VarChar(100)
-  ubicacion       String    @db.VarChar(100)
-  cantidad        Int
-  estado          EstadoResiduo
-  fechaRegistro   DateTime  @default(now()) @map("fecha_registro")
-  @@index([tipoDeResiduo])
-}
-
 enum EstadoResiduo {
   disponible
   en_proceso
   reciclado
-}
-
-model Encuesta {
-  id               Int               @id @default(autoincrement())
-  titulo           String            @db.VarChar(200)
-  descripcion      String?           @db.Text
-  fechaCreacion    DateTime          @default(now())
-  fechaExpiracion  DateTime?
-  estado           EstadoEncuesta    @default(activa)
-  creador          Usuario           @relation("EncuestaCreador", fields: [creadorId], references: [id])
-  creadorId        Int
-  preguntas        Pregunta[]
-  respuestas       RespuestaEncuesta[]
-
-  @@map("encuestas")
 }
 
 enum EstadoEncuesta {
@@ -96,79 +352,6 @@ enum TipoPregunta {
   si_no
 }
 
-model Pregunta {
-  id              Int               @id @default(autoincrement())
-  encuestaId      Int
-  encuesta        Encuesta          @relation(fields: [encuestaId], references: [id], onDelete: Cascade)
-  texto           String            @db.Text
-  tipo            TipoPregunta
-  requerida       Boolean           @default(true)
-  orden           Int
-  opciones        OpcionPregunta[]
-  respuestas      RespuestaPregunta[]
-
-  @@map("preguntas")
-}
-
-model OpcionPregunta {
-  id          Int       @id @default(autoincrement())
-  preguntaId  Int
-  pregunta    Pregunta  @relation(fields: [preguntaId], references: [id], onDelete: Cascade)
-  texto       String    @db.VarChar(200)
-  orden       Int
-  respuestas  RespuestaPregunta[]
-
-  @@map("opciones_preguntas")
-}
-
-model RespuestaEncuesta {
-  id              Int               @id @default(autoincrement())
-  encuestaId      Int
-  encuesta        Encuesta          @relation(fields: [encuestaId], references: [id])
-  usuarioId       Int
-  usuario     Usuario  @relation(name: "UsuarioEncuesta", fields: [usuarioId], references: [id])
-  ciudadanoId     Int?              @map("ciudadano_id")
-  ciudadano       Usuario?          @relation(name: "CiudadanoEncuesta", fields: [ciudadanoId], references: [id])
-  fechaRespuesta  DateTime          @default(now())
-  respuestas      RespuestaPregunta[]
-  completada      Boolean           @default(false)
-
-  @@map("respuestas_encuestas")
-}
-
-
-model RespuestaPregunta {
-  id                  Int               @id @default(autoincrement())
-  respuestaEncuestaId Int
-  respuestaEncuesta   RespuestaEncuesta @relation(fields: [respuestaEncuestaId], references: [id], onDelete: Cascade)
-  preguntaId          Int
-  pregunta            Pregunta          @relation(fields: [preguntaId], references: [id])
-  opcionSeleccionadaId Int?
-  opcionSeleccionada  OpcionPregunta?   @relation(fields: [opcionSeleccionadaId], references: [id])
-  textoRespuesta      String?           @db.Text
-  valorEscala         Int?
-
-  @@map("respuestas_preguntas")
-}
-
-model Pqrs {
-  id                  Int       @id @default(autoincrement()) @map("id_solicitud")
-  descripcion         String    @db.Text
-  motivo             String    @db.VarChar(200)
-  categoria          CategoriaPqrs
-  estado             EstadoPqrs @default(Abierto)
-  seguimiento        String?   @db.VarChar(255)
-  fechaCreacion      DateTime  @default(now()) @map("fecha_creacion")
-  ciudadano          Usuario   @relation("CiudadanoPqrs", fields: [idCiudadano], references: [id], onDelete: Cascade)
-  idCiudadano        Int       @map("id_ciudadano")
-  creador            Usuario   @relation("CreadorPqrs", fields: [idUsuarioCreador], references: [id])
-  idUsuarioCreador   Int       @map("id_usuario_creador")
-  modificador        Usuario?  @relation("ModificadorPqrs", fields: [idUsuarioModificador], references: [id])
-  idUsuarioModificador Int?    @map("id_usuario_modificador")
-
-  @@index([estado, fechaCreacion])
-}
-
 enum CategoriaPqrs {
   Reclamo
   Peticion
@@ -180,36 +363,6 @@ enum EstadoPqrs {
   Abierto
   En_proceso
   Cerrado
-}
-
-model FormularioTipo {
-  id              Int               @id @default(autoincrement())
-  nombre          String            @db.VarChar(100)
-  descripcion     String?           @db.Text
-  activo          Boolean           @default(true)
-  campos          CampoFormulario[]
-  formularios     Formulario[]
-  creadorId       Int
-  creador         Usuario           @relation("CreadorFormularioTipo", fields: [creadorId], references: [id])
-  fechaCreacion   DateTime          @default(now()) @map("fecha_creacion")
-  
-  @@map("formulario_tipos")
-}
-
-// Modelo para definir campos personalizables
-model CampoFormulario {
-  id              Int               @id @default(autoincrement())
-  formularioTipoId Int              
-  formularioTipo  FormularioTipo    @relation(fields: [formularioTipoId], references: [id], onDelete: Cascade)
-  nombre          String            @db.VarChar(100)
-  descripcion     String?           @db.Text
-  tipo            TipoCampo         
-  requerido       Boolean           @default(false)
-  orden           Int
-  opciones        String?           @db.Text  // Opciones en formato JSON para selects, checkboxes, etc.
-  valores         ValorCampo[]
-  
-  @@map("campo_formularios")
 }
 
 enum TipoCampo {
@@ -227,27 +380,6 @@ enum TipoCampo {
   ubicacion
 }
 
-// Instancia de formulario
-model Formulario {
-  id              Int               @id @default(autoincrement())
-  formularioTipoId Int
-  formularioTipo  FormularioTipo    @relation(fields: [formularioTipoId], references: [id])
-  titulo          String            @db.VarChar(200)
-  descripcion     String?           @db.Text
-  estado          EstadoFormulario  @default(borrador)
-  valores         ValorCampo[]
-  rutaId          Int?
-  ruta            Rutas?            @relation("FormularioRuta", fields: [rutaId], references: [id])
-  creadorId       Int
-  creador         Usuario           @relation("CreadorFormulario", fields: [creadorId], references: [id])
-  fechaCreacion   DateTime          @default(now()) @map("fecha_creacion")
-  fechaEnvio      DateTime?         @map("fecha_envio")
-  tareaId         Int?              @unique
-  tarea           Tarea?            @relation(fields: [tareaId], references: [id])
-  
-  @@map("formularios")
-}
-
 enum EstadoFormulario {
   borrador
   enviado
@@ -255,78 +387,10 @@ enum EstadoFormulario {
   rechazado
 }
 
-// Valores de campos específicos para cada formulario
-model ValorCampo {
-  id                Int               @id @default(autoincrement())
-  formularioId      Int
-  formulario        Formulario        @relation(fields: [formularioId], references: [id], onDelete: Cascade)
-  campoFormularioId Int
-  campoFormulario   CampoFormulario   @relation(fields: [campoFormularioId], references: [id])
-  valorTexto        String?           @db.Text
-  valorNumero       Int?
-  valorDecimal      Decimal?          @db.Decimal(10, 5)
-  valorFecha        DateTime?
-  
-  @@map("valor_campos")
-}
-
-model Multimedia {
-  id            Int       @id @default(autoincrement()) @map("id_multimedia")
-  url           String   @map("url_archivo") @db.VarChar(200)
-  tamanoArchivo Decimal   @map("tamano_archivo") @db.Decimal(10,2)
-}
-
-
-model Incidencias {
-  id                  Int       @id @default(autoincrement()) @map("id_incidencia")
-  fechaIncidencia     DateTime  @map("fecha_incidencia")
-  tituloIncidencia    String    @map("titulo_incidencia") @db.VarChar(200)
-  descripcionIncidencia String  @map("descripcion_incidencia") @db.Text
-  tipoIncidencia      String    @map("tipo_incidencia") @db.VarChar(200)
-  estadoIncidencia    EstadoIncidencia @default(abierta) @map("estado_incidencia")
-  usuarioAsignado     Usuario?  @relation("UsuarioAsignado", fields: [idUsuario], references: [id])
-  idUsuario           Int?      @map("id_usuario")
-  ciudadano           Usuario?  @relation("CiudadanoIncidencia", fields: [idUsuarioCiudadano], references: [id])
-  idUsuarioCiudadano  Int?      @map("id_usuario_ciudadano")
-  creador             Usuario   @relation("CreadorIncidencia", fields: [idUsuarioCreador], references: [id])
-  idUsuarioCreador    Int       @map("id_usuario_creador")
-  modificador         Usuario?  @relation("ModificadorIncidencia", fields: [idUsuarioModificador], references: [id])
-  idUsuarioModificador Int?     @map("id_usuario_modificador")
-}
-
 enum EstadoIncidencia {
   abierta
   en_progreso
   cerrada
-}
-
-model Cliente {
-  id            Int      @id @default(autoincrement()) @map("id_cliente")
-  nombre        String   @db.VarChar(100)
-  apellido      String   @db.VarChar(100)
-  correo        String   @unique @db.VarChar(150)
-  telefono      String   @db.VarChar(20)
-  direccion     String?  @db.Text
-  fechaRegistro DateTime @default(now()) @map("fecha_registro")
-  pagos         Pagos[]
-}
-
-model Pagos {
-  id               Int       @id @default(autoincrement()) @map("id_pago")
-  cliente          Cliente?  @relation(fields: [idCliente], references: [id], onDelete: Cascade)
-  idCliente        Int?      @map("id_cliente")
-  fechaPago        DateTime  @map("fecha_pago") @db.Date
-  descripcion      String?   @db.VarChar(300)
-  montoDeuda       Decimal   @default(0.00) @map("monto_deuda") @db.Decimal(10,2)
-  valorPago        Decimal   @default(0.00) @map("monto_pago")  @db.Decimal(10,2)
-  saldoPendiente   Decimal   @default(0.00) @map("monto_saldo")  @db.Decimal(10,2)
-  interesMora      Decimal   @default(0.00) @map("interes_mora") @db.Decimal(10,2)
-  metodoPago       MetodoPago @map("metodo_pago")
-  diasMora         Int       @default(0) @map("dias_mora")
-  estadoPago       EstadoPago @default(pendiente) @map("estado_pago")
-  notas            String?   @db.VarChar(255)
-  frecuenciaDePago FrecuenciaPago? @map("frecuencia_de_pago")
-  fechaProximoPago DateTime? @map("fecha_proximo_pago") @db.Date
 }
 
 enum MetodoPago {
@@ -351,33 +415,11 @@ enum FrecuenciaPago {
   anual
 }
 
-// Sistema de tareas
-model Tarea {
-  id              Int              @id @default(autoincrement())
-  titulo          String           @db.VarChar(200)
-  descripcion     String?          @db.Text
-  estado          EstadoTarea      @default(pendiente)
-  prioridad       PrioridadTarea   @default(media)
-  asignadoId      Int
-  asignado        Usuario          @relation("TareaAsignado", fields: [asignadoId], references: [id])
-  creadorId       Int
-  creador         Usuario          @relation("TareaCreador", fields: [creadorId], references: [id])
-  fechaCreacion   DateTime         @default(now()) @map("fecha_creacion")
-  fechaLimite     DateTime?        @map("fecha_limite")
-  fechaCompletada DateTime?        @map("fecha_completada")
-  archivada       Boolean @default(false)  
-  rutaId          Int?
-  ruta            Rutas?           @relation("TareaRuta", fields: [rutaId], references: [id])
-  formulario      Formulario?
-
-  @@map("tareas")
-}
-
 enum EstadoTarea {
-  pendiente
+  por_hacer
   en_progreso
   completada
-  cancelada
+  cancelado
 }
 
 enum PrioridadTarea {
@@ -385,56 +427,4 @@ enum PrioridadTarea {
   media
   alta
   urgente
-}
-
-
-model Ubicaciones {
-  id        Int          @id @default(autoincrement()) @map("id_ubicacion")
-  nombre    String       @db.VarChar(255)
-  latitud   Decimal?     @db.Decimal(10, 8)
-  longitud  Decimal?     @db.Decimal(11, 8)
-  puntosRuta PuntosRuta[]
-}
-
-model Rutas {
-  id                  Int                 @id @default(autoincrement()) @map("id_ruta")
-  nombre              String              @db.VarChar(255)
-  color               String              @db.VarChar(7)
-  horaInicio          DateTime?           // Hora de inicio de la ruta (opcional)
-  horaFin             DateTime?           // Hora de fin de la ruta (opcional)
-  puntosRuta          PuntosRuta[]
-  vehiculosAsignados  VehiculosAsignados[]
-  usuarioAsignadoId   Int?
-  usuarioAsignado     Usuario?            @relation(fields: [usuarioAsignadoId], references: [id])
-  
-  // Nuevas relaciones
-  formularios         Formulario[]        @relation("FormularioRuta")
-  tareas              Tarea[]             @relation("TareaRuta")
-}
-
-
-model PuntosRuta {
-  id           Int         @id @default(autoincrement()) @map("id_punto_ruta")
-  ruta         Rutas       @relation(fields: [idRuta], references: [id], onDelete: Cascade)
-  idRuta       Int         @map("id_ruta")
-  ubicacion    Ubicaciones @relation(fields: [idUbicacion], references: [id], onDelete: Cascade)
-  idUbicacion  Int         @map("id_ubicacion")
-  orden        Int
-}
-
-model Vehiculos {
-  id                Int                  @id @default(autoincrement()) @map("id_auto")
-  modelo            String               @db.VarChar(50)
-  placa             String               @unique @db.VarChar(20)
-  marca             String               @db.VarChar(50)
-  vehiculosAsignados VehiculosAsignados[]
-}
-
-model VehiculosAsignados {
-  id              Int       @id @default(autoincrement()) @map("id_vehiculo_asignado")
-  vehiculo        Vehiculos @relation(fields: [idVehiculo], references: [id], onDelete: Cascade)
-  idVehiculo      Int       @map("id_vehiculo")
-  ruta            Rutas     @relation(fields: [idRuta], references: [id], onDelete: Cascade)
-  idRuta          Int       @map("id_ruta")
-  fechaAsignacion DateTime  @default(now())
 }
