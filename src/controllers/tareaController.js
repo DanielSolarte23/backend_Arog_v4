@@ -267,7 +267,7 @@ const tareaController = {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { titulo, descripcion, estado, prioridad, fechaLimite, asignadoId } = req.body;
+      const { titulo, descripcion, estado, prioridad, fechaLimite, asignadoId, archivada } = req.body;
       
       const tarea = await prisma.tarea.update({
         where: { id: Number(id) },
@@ -276,6 +276,7 @@ const tareaController = {
           descripcion,
           estado,
           prioridad,
+          archivada,  // añadir esta línea
           fechaLimite: fechaLimite ? new Date(fechaLimite) : undefined,
           asignadoId: asignadoId ? Number(asignadoId) : undefined,
           ...(estado === 'completada' && { fechaCompletada: new Date() })
@@ -290,6 +291,51 @@ const tareaController = {
       console.error('Error al actualizar tarea:', error);
       res.status(500).json({ 
         message: 'Error al actualizar tarea',
+        error: error.message
+      });
+    }
+  },
+
+  async getArchivadas(req, res) {
+    try {
+      const tareasArchivadas = await prisma.tarea.findMany({
+        where: {
+          archivada: true
+        },
+        include: {
+          asignado: {
+            select: {
+              id: true,
+              nombres: true,
+              apellidos: true
+            }
+          },
+          creador: {
+            select: {
+              id: true,
+              nombres: true,
+              apellidos: true
+            }
+          },
+          ruta: true,
+          formulario: {
+            select: {
+              id: true,
+              titulo: true,
+              estado: true
+            }
+          }
+        },
+        orderBy: {
+          fechaCreacion: 'desc'
+        }
+      });
+      
+      res.status(200).json(tareasArchivadas);
+    } catch (error) {
+      console.error('Error al obtener tareas archivadas:', error);
+      res.status(500).json({ 
+        message: 'Error al obtener tareas archivadas',
         error: error.message
       });
     }
