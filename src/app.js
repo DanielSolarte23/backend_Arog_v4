@@ -16,6 +16,11 @@ const vehiculosRoutes = require('./routes/vehiculosRoutes')
 const formularioTipoRoutes = require('./routes/formularioTipoRoutes')
 const formularioRoutes = require('./routes/formularioRoutes')
 const tareaRoutes = require('./routes/tareaRoutes')
+const pqrRoutes = require ('./routes/pqrsRoutes')
+const clienteRoutes = require ('./routes/clienteRoutes')
+const multimediaRoutes = require ('./routes/multimediaRoutes')
+const pagosRoutes = require('./routes/pagosRoutes')
+const residuosRoutes = require('./routes/residuoRoutes')
 const logger = require('morgan');
 
 
@@ -25,7 +30,7 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 
-dotenv.config()
+dotenv.config()   
 app.use(logger('dev'));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
@@ -59,8 +64,13 @@ app.use('/api/encuestas', encuestaRoutes);
 app.use('/api/tareas', tareaRoutes);
 app.use('/api/formulariosTipo', formularioTipoRoutes)
 app.use('/api/formularios', formularioRoutes)
+app.use('/api/pqr', pqrRoutes)
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+app.use('/api/cliente', clienteRoutes);
+app.use('/api/multimedia', multimediaRoutes);
+app.use('/api/pagos', pagosRoutes);
+app.use('/api/residuos', residuosRoutes);
 
 // Rutas
 app.use('/api/auth', authRoutes);

@@ -17,7 +17,8 @@
     "nodemon": "^3.1.9",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "prisma": "^6.4.1"
+    "prisma": "^6.4.1",
+    "zod": "^3.24.2"
   },
   "name": "b2prisma",
   "version": "1.0.0",

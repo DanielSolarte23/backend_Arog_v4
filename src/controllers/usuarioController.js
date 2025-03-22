@@ -50,11 +50,10 @@ const usuarioController = {
           contraseña: hashedPassword,
           correoElectronico,
           telefono,
-          rol: rol.ciudadano // En lugar de "CIUDADANO"
+          rol
         }
       });
       
-
       res.status(201).json(usuario);
     } catch (error) {
       res.status(400).json({ error: error.message });
@@ -93,11 +92,10 @@ const usuarioController = {
   async actualizarUsuario(req, res) {
     try {
       const { id } = req.params;
-      const { nombres, apellidos, nombreDeUsuario, correoElectronico, telefono, rol, contraseña } = req.body;
+      const { nombres, apellidos, nombreDeUsuario, correoElectronico, telefono, rol, direccion, contraseña } = req.body;
 
-      let updateData = { nombres, apellidos, nombreDeUsuario, correoElectronico, telefono, rol };
+      let updateData = { nombres, apellidos, nombreDeUsuario, correoElectronico, telefono, direccion, rol };
 
-      // Validar si se envía un nuevo nombre de usuario
       if (nombreDeUsuario && !usernameRegex.test(nombreDeUsuario)) {
         return res.status(400).json({ error: 'El nombre de usuario no es válido.' });
       }
@@ -136,7 +134,7 @@ const usuarioController = {
         data: updateData
       });
 
-      res.json(usuario);
+      res.status(201).json(usuario);
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
