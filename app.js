@@ -56,7 +56,7 @@ app.use(
 // Limitar peticiones para prevenir ataques de fuerza bruta
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 10, // 10 intentos
+  max: 15, // 10 intentos
   message:
     "Demasiados intentos de inicio de sesión, por favor intente de nuevo después de 15 minutos",
 });
