@@ -4,7 +4,7 @@
 POST http://localhost:3000/api/usuarios
 {
   "nombres": "nombreejemplo",
-  "apellidos": "apellidoEjemplo",
+  "apellidos": "apellidoEjemplo",j
   "contraseña": "123456",
   "correoElectronico": "correo@ejemplo.com",
   "telefono": "123456789",
