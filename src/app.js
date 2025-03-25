@@ -21,6 +21,8 @@ const clienteRoutes = require ('./routes/clienteRoutes')
 const multimediaRoutes = require ('./routes/multimediaRoutes')
 const pagosRoutes = require('./routes/pagosRoutes')
 const residuosRoutes = require('./routes/residuoRoutes')
+const planPagoRoutes = require('./routes/planesRoutes')
+const planPagoController = require('./controllers/planesController');
 const logger = require('morgan');
 
 
@@ -71,7 +73,9 @@ app.use('/api/cliente', clienteRoutes);
 app.use('/api/multimedia', multimediaRoutes);
 app.use('/api/pagos', pagosRoutes);
 app.use('/api/residuos', residuosRoutes);
+app.use('/api/plan-pagos', planPagoRoutes);
 
+planPagoController.iniciarGeneracionAutomatica();
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', oauthRoutes);

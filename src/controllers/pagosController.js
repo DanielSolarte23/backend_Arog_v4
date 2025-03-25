@@ -1,66 +1,166 @@
-const { PrismaClient, MetodoPago, EstadoPago, FrecuenciaPago } = require('@prisma/client');
-const { json } = require('express');
-const { cliente } = require('../models/prisma');
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-
-
 const pagos = {
-  crearpago: async (req, res) => {
+  crearPago: async (req, res) => {
     try {
-      const { idCliente, fechaPago, descripcion, montoDeuda, valorPago, interesMora, metodoPago, diasMora, estadoPago, notas, frecuenciaDePago, fechaProximoPago } = req.body;
-
-      console.log("Datos recibidos:", req.body); // Para depuración
-
-      // Validar que idCliente sea un número válido
-      const idClienteValido = idCliente ? parseInt(idCliente, 10) : null;
-
-      // Construcción del objeto de datos
-      const dataPago = {
-        fechaPago: new Date(fechaPago),
+      const {
+        idCliente,
+        idPlanPago,
         descripcion,
-        montoDeuda: parseFloat(montoDeuda),
-        valorPago: parseFloat(valorPago),
-        saldoPendiente: (parseFloat(montoDeuda) || 0) - (parseFloat(valorPago) || 0) + (parseFloat(interesMora) || 0),
-        interesMora: parseFloat(interesMora),
-        metodoPago,
-        diasMora,
-        estadoPago,
-        notas,
-        frecuenciaDePago,
-        fechaProximoPago: fechaProximoPago ? new Date(fechaProximoPago) : null,
-      };
+        fechaEmision,
+        fechaVencimiento,
+        montoPago,
+        pagoInicial, // Opcional: pago que se realiza al momento de crear
+        metodoPago,  // Solo se usa si hay pagoInicial
+        referencia   // Solo se usa si hay pagoInicial
+      } = req.body;
 
-      // Si hay un cliente, conectar el pago con él
-      if (idClienteValido) {
-        dataPago.cliente = { connect: { id: idClienteValido } };
-      }
+      // Iniciar una transacción de base de datos para asegurar consistencia
+      const resultado = await prisma.$transaction(async (tx) => {
+        // Crear el registro de pago
+        const nuevoPago = await tx.pago.create({
+          data: {
+            descripcion,
+            fechaEmision: fechaEmision ? new Date(fechaEmision) : new Date(),
+            fechaVencimiento: new Date(fechaVencimiento),
+            montoPago: parseFloat(montoPago),
+            saldoPendiente: parseFloat(montoPago) - (parseFloat(pagoInicial) || 0),
+            cliente: { connect: { id: parseInt(idCliente) } },
+            ...(idPlanPago ? { planPago: { connect: { id: parseInt(idPlanPago) } } } : {})
+          }
+        });
 
-      // Crear el pago en la base de datos
-      const nuevoPago = await prisma.pagos.create({ data: dataPago });
+        // Si hay un pago inicial, registrar la transacción
+        if (pagoInicial && parseFloat(pagoInicial) > 0) {
+          await tx.transaccion.create({
+            data: {
+              pago: { connect: { id: nuevoPago.id } },
+              monto: parseFloat(pagoInicial),
+              metodoPago,
+              referencia,
+              fechaPago: new Date()
+            }
+          });
 
-      return res.status(201).json(nuevoPago);
+          // Actualizar el estado del pago según el monto pagado
+          const montoPagado = parseFloat(pagoInicial);
+          const estadoPago = montoPagado >= parseFloat(montoPago)
+            ? 'pagadoTotal'
+            : montoPagado > 0
+              ? 'pagadoParcial'
+              : 'pendiente';
+
+          await tx.pago.update({
+            where: { id: nuevoPago.id },
+            data: {
+              montoPagado,
+              estadoPago,
+              saldoPendiente: parseFloat(montoPago) - montoPagado
+            }
+          });
+        }
+
+        return nuevoPago;
+      });
+
+      return res.status(201).json(resultado);
     } catch (error) {
       console.error("Error al crear el pago:", error);
       return res.status(500).json({ error: "Error al crear el pago" });
     }
   },
 
+  registrarTransaccion: async (req, res) => {
+    try {
+      const { idPago, monto, metodoPago, referencia } = req.body;
+
+      // Obtener el pago actual para verificar el saldo pendiente
+      const pagoActual = await prisma.pago.findUnique({
+        where: { id: parseInt(idPago) }
+      });
+
+      if (!pagoActual) {
+        return res.status(404).json({ error: "Pago no encontrado" });
+      }
+
+      const montoFloat = parseFloat(monto);
+
+      // Verificar que el monto no exceda el saldo pendiente
+      if (montoFloat > pagoActual.saldoPendiente) {
+        return res.status(400).json({
+          error: "El monto excede el saldo pendiente",
+          saldoPendiente: pagoActual.saldoPendiente
+        });
+      }
+
+      // Iniciar transacción
+      const resultado = await prisma.$transaction(async (tx) => {
+        // Registrar la transacción
+        const nuevaTransaccion = await tx.transaccion.create({
+          data: {
+            pago: { connect: { id: parseInt(idPago) } },
+            monto: montoFloat,
+            metodoPago,
+            referencia,
+            fechaPago: new Date()
+          }
+        });
+
+        // Calcular nuevo monto pagado y saldo pendiente
+        // Convertimos montoPagado a número antes de sumar
+        const nuevoPagado = parseFloat(pagoActual.montoPagado) + montoFloat;
+        const nuevoSaldo = parseFloat(pagoActual.saldoPendiente) - montoFloat;
+
+        // Determinar el nuevo estado
+        let nuevoEstado;
+        if (nuevoSaldo <= 0) {
+          nuevoEstado = 'pagadoTotal';
+        } else if (nuevoPagado > 0) {
+          nuevoEstado = 'pagadoParcial';
+        } else {
+          nuevoEstado = 'pendiente';
+        }
+
+        // Actualizar el pago
+        const pagoActualizado = await tx.pago.update({
+          where: { id: parseInt(idPago) },
+          data: {
+            montoPagado: nuevoPagado,
+            saldoPendiente: nuevoSaldo,
+            estadoPago: nuevoEstado,
+            ultimaActualizacion: new Date()
+          }
+        });
+
+        return { transaccion: nuevaTransaccion, pago: pagoActualizado };
+      });
+
+      return res.status(201).json(resultado);
+    } catch (error) {
+      console.error("Error al registrar la transacción:", error);
+      return res.status(500).json({ error: "Error al registrar la transacción" });
+    }
+  },
+
   obtenerPagos: async (req, res) => {
     try {
-      const pagos = await prisma.pagos.findMany({
+      const pagos = await prisma.pago.findMany({
         include: {
           cliente: {
-              select: {
-                  id: true, 
-                  nombre: true  
-              }
-          }
-      }
-  });
-return res.json(pagos);  
-  } catch (error) {
-      console.log(error);
+            select: {
+              id: true,
+              nombre: true,
+              apellido: true,
+            },
+          },
+          planPago: true, // Incluir información del plan de pago
+          transacciones: true, // Incluir transacciones asociadas
+        },
+      });
+      return res.json(pagos);
+    } catch (error) {
+      console.error("Error al obtener los pagos:", error);
       return res.status(500).json({ error: 'Error al obtener los pagos' });
     }
   },
@@ -68,16 +168,19 @@ return res.json(pagos);
   obtenerPagoPorId: async (req, res) => {
     try {
       const { id } = req.params;
-      const pago = await prisma.pagos.findUnique({
-          where: { id: Number(id) },
-          include: {
-              cliente: {
-                  select: {
-                      id: true,
-                      nombre: true
-                  }
-              }
-          }
+      const pago = await prisma.pago.findUnique({
+        where: { id: Number(id) },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nombre: true,
+              apellido: true,
+            },
+          },
+          planPago: true, // Incluir información del plan de pago
+          transacciones: true, // Incluir transacciones asociadas
+        },
       });
 
       if (!pago) {
@@ -86,7 +189,7 @@ return res.json(pagos);
 
       return res.json(pago);
     } catch (error) {
-      console.error(error);
+      console.error("Error al obtener el pago:", error);
       return res.status(500).json({ error: 'Error al obtener el pago.' });
     }
   },
@@ -94,23 +197,34 @@ return res.json(pagos);
   actualizarPago: async (req, res) => {
     try {
       const { id } = req.params;
-      const { estadoPago, valorPago } = req.body;
+      const { descripcion, fechaVencimiento, montoPago, montoPagado, interesMora, diasMora, estadoPago, notas } = req.body;
 
-      const pagoExistente = await prisma.pagos.findUnique({ where: { id: Number(id) } });
+      const pagoExistente = await prisma.pago.findUnique({ where: { id: Number(id) } });
       if (!pagoExistente) {
         return res.status(404).json({ error: 'Pago no encontrado.' });
       }
 
-      const saldoPendiente = (pagoExistente.montoDeuda || 0) - (valorPago || pagoExistente.valorPago) + (pagoExistente.interesMora || 0);
+      // Calcular el saldo pendiente
+      const saldoPendiente = parseFloat(montoPago) - parseFloat(montoPagado || 0) + parseFloat(interesMora || 0);
 
-      const pagoActualizado = await prisma.pagos.update({
+      const pagoActualizado = await prisma.pago.update({
         where: { id: Number(id) },
-        data: { estadoPago, valorPago, saldoPendiente },
+        data: {
+          descripcion,
+          fechaVencimiento: new Date(fechaVencimiento),
+          montoPago: parseFloat(montoPago),
+          montoPagado: parseFloat(montoPagado) || 0,
+          saldoPendiente: saldoPendiente,
+          interesMora: parseFloat(interesMora) || 0,
+          diasMora: parseInt(diasMora) || 0,
+          estadoPago: estadoPago,
+          notas: notas,
+        },
       });
 
       return res.json(pagoActualizado);
     } catch (error) {
-      console.error(error);
+      console.error("Error al actualizar el pago:", error);
       return res.status(500).json({ error: 'Error al actualizar el pago.' });
     }
   },
@@ -118,16 +232,15 @@ return res.json(pagos);
   eliminarPago: async (req, res) => {
     try {
       const { id } = req.params;
-      await prisma.pagos.delete({ where: { id: Number(id) } });
+      await prisma.pago.delete({ where: { id: Number(id) } });
       return res.json({ mensaje: 'Pago eliminado correctamente.' });
     } catch (error) {
-      console.error(error);
+      console.error("Error al eliminar el pago:", error);
       return res.status(500).json({ error: 'Error al eliminar el pago.' });
     }
-  },
+  }
 };
 
+
+
 module.exports = pagos;
-
-
-   

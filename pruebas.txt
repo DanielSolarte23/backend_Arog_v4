@@ -353,3 +353,85 @@ http://localhost:3002/api/tareas/usuario/1
     "longitud": "-76.56860827"
   }
 ]
+
+
+-------REGISTRAR CLIENTE CON PLAN DE PAGO---------
+
+{
+  "nombre": "María",
+  "apellido": "Gómez",
+  "correo": "maria.gomez@example.com",
+  "telefono": "987-654-3210",
+  "direccion": "Avenida Secundaria 456",
+  "planPago": {
+    "descripcion": "Plan de pago mensual",
+    "montoPeriodico": "100.50",
+    "diaPago": "15",
+    "periodicidad": "MENSUAL",
+    "fechaInicio": "2024-03-01T00:00:00.000Z"
+  }
+}
+
+------REGISTRAR CLIENTE SIN PLAN DE PAGOS----------
+np
+
+
+-------Crear un plan de pago------------
+{
+    "idCliente": 1,
+    "descripcion": "Membresía mensual",
+    "montoPeriodico": 50.00,
+    "diaPago": 15,
+    "periodicidad": "mensual",
+    "fechaInicio": "2025-04-01"
+}
+
+
+---------Crear un pago único----------
+{
+    "idCliente": 1,
+    "descripcion": "Compra de curso de programación",
+    "fechaVencimiento": "2025-04-30",
+    "montoPago": 199.99,
+    "pagoInicial": 50.00,
+    "metodoPago": "tarjeta",
+    "referencia": "TXN-12345"
+}
+
+-----------Crear un pago asociado a un plan----------
+{
+    "idCliente": 1,
+    "idPlanPago": 1,
+    "descripcion": "Cuota mensual - Abril 2025",
+    "fechaVencimiento": "2025-04-15",
+    "montoPago": 50.00
+}
+
+
+----Registrar una transacción (pago) para un pago existente-----
+{
+    "idPago": 1,
+    "monto": 75.00,
+    "metodoPago": "transferencia",
+    "referencia": "TRANSFER-98765"
+}
+
+--------Registrar pago total de un saldo pendiente--------
+{
+    "idPago": 1,
+    "monto": 149.99,
+    "metodoPago": "paypal",
+    "referencia": "PAYPAL-ABC123"
+}
+
+
+-----Cancelar un pago------
+{
+    "motivo": "Cliente solicitó cancelación del servicio"
+  },
+  "response": {
+    "id": 2,
+    "estadoPago": "cancelado",
+    "notas": "Cliente solicitó cancelación del servicio",
+    "ultimaActualizacion": "2025-03-24T09:15:00.000Z"
+}

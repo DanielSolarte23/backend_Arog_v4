@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config/config");
 
-console.log("JWT_SECRET:", JWT_SECRET); 
+// console.log("JWT_SECRET:", JWT_SECRET); 
 
 const createAccesToken = (payload) => {
     return new Promise((resolve, reject) => {

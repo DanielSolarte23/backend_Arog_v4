@@ -200,7 +200,12 @@ model ValorCampo {
 model Multimedia {
   id            Int     @id @default(autoincrement()) @map("id_multimedia")
   url           String  @map("url_archivo") @db.VarChar(200)
+  nombreArchivo String  @map("nombre_archivo") @db.VarChar(150) 
   tamanoArchivo Decimal @map("tamano_archivo") @db.Decimal(10, 2)
+  tipoArchivo   String  @map("tipo_archivo") @db.VarChar(50) 
+  ancho         Int?    @map("ancho") 
+  alto          Int?    @map("alto")  
+  fechaSubida   DateTime @map("fecha_subida") @default(now())
 }
 
 model Incidencias {
@@ -220,6 +225,9 @@ model Incidencias {
   modificador           Usuario?         @relation("ModificadorIncidencia", fields: [idUsuarioModificador], references: [id])
 }
 
+// This is a Prisma schema file
+// More information: https://pris.ly/d/prisma-schema
+
 model Cliente {
   id            Int      @id @default(autoincrement()) @map("id_cliente")
   nombre        String   @db.VarChar(100)
@@ -228,25 +236,68 @@ model Cliente {
   telefono      String   @db.VarChar(20)
   direccion     String?
   fechaRegistro DateTime @default(now()) @map("fecha_registro")
-  pagos         Pagos[]
+  // Eliminamos fechaPagoFijo ya que esto se manejará en cada plan de pago
+  activo        Boolean  @default(true)
+  planes        PlanPago[]
+  pagos         Pago[]
 }
 
-model Pagos {
-  id               Int             @id @default(autoincrement()) @map("id_pago")
-  idCliente        Int?            @map("id_cliente")
-  fechaPago        DateTime        @map("fecha_pago") @db.Date
-  descripcion      String?         @db.VarChar(300)
-  montoDeuda       Decimal         @default(0.00) @map("monto_deuda") @db.Decimal(10, 2)
-  valorPago        Decimal         @default(0.00) @map("monto_pago") @db.Decimal(10, 2)
-  saldoPendiente   Decimal         @default(0.00) @map("monto_saldo") @db.Decimal(10, 2)
-  interesMora      Decimal         @default(0.00) @map("interes_mora") @db.Decimal(10, 2)
-  metodoPago       MetodoPago      @map("metodo_pago")
-  diasMora         Int             @default(0) @map("dias_mora")
-  estadoPago       EstadoPago      @default(pendiente) @map("estado_pago")
-  notas            String?         @db.VarChar(255)
-  frecuenciaDePago FrecuenciaPago? @map("frecuencia_de_pago")
-  fechaProximoPago DateTime?       @map("fecha_proximo_pago") @db.Date
-  cliente          Cliente?        @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+// Nuevo modelo para manejar planes de pago recurrentes
+model PlanPago {
+  id               Int       @id @default(autoincrement()) @map("id_plan")
+  idCliente        Int       @map("id_cliente")
+  descripcion      String    @db.VarChar(200)
+  montoPeriodico   Decimal   @map("monto_periodico") @db.Decimal(10, 2)
+  diaPago          Int       @map("dia_pago") // Día del mes para el pago (1-31)
+  periodicidad     Periodicidad @default(mensual) // Frecuencia de pago
+  fechaInicio      DateTime  @map("fecha_inicio") @db.Date
+  fechaFin         DateTime? @map("fecha_fin") @db.Date // Null si es indefinido
+  activo           Boolean   @default(true)
+  cliente          Cliente   @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+  pagos            Pago[]    // Relación con los pagos generados por este plan
+}
+
+
+model Pago {
+  id                 Int         @id @default(autoincrement()) @map("id_pago")
+  idCliente          Int         @map("id_cliente")
+  idPlanPago         Int?        @map("id_plan") // Opcional, si está vinculado a un plan
+  descripcion        String      @db.VarChar(200)
+  fechaEmision       DateTime    @default(now()) @map("fecha_emision") // Cuándo se generó el cobro
+  fechaVencimiento   DateTime    @map("fecha_vencimiento") @db.Date // Fecha límite de pago
+  montoPago          Decimal     @map("monto_pago") @db.Decimal(10, 2) // Monto total a pagar
+  
+
+  transacciones      Transaccion[]
+  
+
+  montoPagado        Decimal     @default(0.00) @map("monto_pagado") @db.Decimal(10, 2)
+  saldoPendiente     Decimal     @default(0.00) @map("saldo_pendiente") @db.Decimal(10, 2)
+  interesMora        Decimal     @default(0.00) @map("interes_mora") @db.Decimal(10, 2)
+  diasMora           Int         @default(0) @map("dias_mora")
+  estadoPago         EstadoPago  @default(pendiente) @map("estado_pago")
+  
+  // Referencias
+  cliente            Cliente     @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+  planPago           PlanPago?   @relation(fields: [idPlanPago], references: [id], onDelete: SetNull)
+  
+  // Otros campos útiles
+  notas              String?     @db.VarChar(500)
+  ultimaActualizacion DateTime   @default(now()) @updatedAt @map("ultima_actualizacion")
+}
+
+// Nuevo modelo para registrar cada transacción de pago
+model Transaccion {
+  id           Int        @id @default(autoincrement()) @map("id_transaccion")  
+  idPago       Int        @map("id_pago")
+  fechaPago    DateTime   @default(now()) @map("fecha_pago")
+  monto        Decimal    @db.Decimal(10, 2)
+  metodoPago   MetodoPago @map("metodo_pago")
+  referencia   String?    @db.VarChar(100) // Referencia de transacción
+  comprobante  String?    @db.VarChar(255) // Ruta de archivo del comprobante
+  
+  // Referencias
+  pago         Pago       @relation(fields: [idPago], references: [id], onDelete: Cascade)
 }
 
 model Tarea {
@@ -318,6 +369,28 @@ model VehiculosAsignados {
   vehiculo        Vehiculos @relation(fields: [idVehiculo], references: [id], onDelete: Cascade)
 }
 
+
+model DocumentoPdf {
+  id            Int      @id @default(autoincrement()) @map("id_pdf")
+  url           String   @map("url_archivo") @db.VarChar(200)
+  nombreArchivo String   @map("nombre_archivo") @db.VarChar(150)
+  tamanoArchivo Decimal  @map("tamano_archivo") @db.Decimal(10, 2)
+  tipoArchivo   String   @map("tipo_archivo") @db.VarChar(50) // "application/pdf"
+  paginas       Int?     @map("paginas")
+  fechaSubida   DateTime @map("fecha_subida") @default(now())
+
+  tipoDocumento TipoDocumento @map("tipo_documento")  // Ahora es un ENUM
+  referenciaId  Int?          @map("referencia_id")   // Relaciona con pagos, informes, certificados
+
+  @@unique([tipoDocumento, referenciaId]) // Garantiza que solo haya un PDF por tipo para cada referencia
+}
+
+enum TipoDocumento {
+  FACTURA
+  CERTIFICADO
+  INFORME
+}
+
 enum Rol {
   administrador
   recolector
@@ -380,6 +453,32 @@ enum TipoCampo {
   ubicacion
 }
 
+enum Periodicidad {
+  semanal
+  quincenal
+  mensual
+  bimestral
+  trimestral
+  semestral
+  anual
+}
+
+enum MetodoPago {
+  efectivo
+  tarjeta
+  transferencia
+  paypal
+  otro
+}
+
+enum EstadoPago {
+  pendiente
+  pagadoParcial
+  pagadoTotal
+  vencido
+  cancelado
+}
+
 enum EstadoFormulario {
   borrador
   enviado
@@ -393,20 +492,6 @@ enum EstadoIncidencia {
   cerrada
 }
 
-enum MetodoPago {
-  efectivo
-  tarjeta
-  transferencia
-  paypal
-  otro
-}
-
-enum EstadoPago {
-  pendiente
-  pagado
-  vencido
-  cancelado
-}
 
 enum FrecuenciaPago {
   mensual
