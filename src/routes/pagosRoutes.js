@@ -7,6 +7,7 @@ router.post('/', pagosController.crearPago);
 router.post('/transacciones', pagosController.registrarTransaccion);
 router.get('/', pagosController.obtenerPagos);
 router.get('/:id', pagosController.obtenerPagoPorId);
+router.get("/:idPago/transacciones", pagosController.listarTransaccionesPorPago);
 router.put('/:id', pagosController.actualizarPago);
 router.delete('/:id', pagosController.eliminarPago);
 

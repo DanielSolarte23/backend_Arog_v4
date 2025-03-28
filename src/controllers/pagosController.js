@@ -143,6 +143,23 @@ const pagos = {
     }
   },
 
+  listarTransaccionesPorPago: async (req, res) => {
+    try {
+        const { idPago } = req.params;
+    
+        // Buscar las transacciones del pago
+        const transacciones = await prisma.transaccion.findMany({
+            where: { idPago: parseInt(idPago) },
+            orderBy: { fechaPago: "desc" }
+        });
+
+        return res.status(200).json(transacciones);
+    } catch (error) {
+        console.error("Error al listar transacciones:", error);
+        return res.status(500).json({ error: "Error al obtener las transacciones" });
+    }
+},
+
   obtenerPagos: async (req, res) => {
     try {
       const pagos = await prisma.pago.findMany({
