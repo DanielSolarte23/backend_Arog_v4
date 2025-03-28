@@ -8,7 +8,6 @@ POST http://localhost:3000/api/usuarios
   "contraseña": "123456",
   "correoElectronico": "correo@ejemplo.com",
   "telefono": "123456789",
-  "rol": "administrador"
 }
 
 --> Obtener todos los usuarios

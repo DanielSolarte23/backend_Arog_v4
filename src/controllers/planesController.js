@@ -96,14 +96,14 @@ const planPagoController = {
         try {
             const clientesConPlanesActivos = await prisma.cliente.findMany({
                 where: {
-                    planes: {  // Cambiado de planPago a planes
+                    planes: {  
                         some: {
                             activo: true,
                         },
                     },
                 },
                 include: {
-                    planes: {  // Cambiado de planPago a planes
+                    planes: { 
                         where: {
                             activo: true,
                         },
@@ -112,7 +112,7 @@ const planPagoController = {
             });
     
             for (const cliente of clientesConPlanesActivos) {
-                for (const plan of cliente.planes) { // Cambiado de planPago a planes
+                for (const plan of cliente.planes) { 
                     await this.generarPagoSiEsNecesario(cliente, plan);
                 }
             }
@@ -128,14 +128,14 @@ const planPagoController = {
         let fechaPago = moment(planPago.fechaInicio);
         const fechaFin = planPago.fechaFin ? moment(planPago.fechaFin) : moment().add(1, 'year');
         
-        // Para evitar bucles infinitos, limitar a un número máximo de iteraciones
+
         const maxIteraciones = 100;
         let iteracion = 0;
     
         while (fechaPago.isSameOrBefore(fechaFin) && iteracion < maxIteraciones) {
             iteracion++;
             
-            // Calcular la fecha de vencimiento según la periodicidad
+
             let fechaVencimiento;
             switch (planPago.periodicidad) {
                 case 'semanal':
@@ -217,6 +217,11 @@ const planPagoController = {
         }
     },
 
+    // iniciarGeneracionAutomatica() {
+    //     cron.schedule('* * * * *', () => {
+    //         this.generarPagosAutomaticamente();
+    //     });
+    // },
     iniciarGeneracionAutomatica() {
         cron.schedule('0 0 * * *', () => {
             this.generarPagosAutomaticamente();
