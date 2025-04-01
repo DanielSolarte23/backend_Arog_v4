@@ -222,6 +222,11 @@ const planPagoController = {
             this.generarPagosAutomaticamente();
         });
     },
+    // iniciarGeneracionAutomatica() {
+    //     cron.schedule('* * * * *', () => {
+    //         this.generarPagosAutomaticamente();
+    //     });
+    // },
 };
 
 module.exports = planPagoController;

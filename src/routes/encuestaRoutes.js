@@ -6,7 +6,9 @@ const  validacionEsquemas = require('../middlewares/validacionMiddleware')
 
 
 // Rutas básicas CRUD
-router.post('/', validacionEsquemas(EncuestaSchema), encuestaController.create);
+router.post('/', 
+    // validacionEsquemas(EncuestaSchema), 
+    encuestaController.create);
 router.get('/', encuestaController.findAll);
 router.get('/:id', encuestaController.findOne);
 router.put('/:id', encuestaController.update);
