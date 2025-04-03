@@ -35,6 +35,11 @@ model Usuario {
   respuestasEncuestas    RespuestaEncuesta[] @relation("UsuarioEncuesta")
   tareasAsignadas        Tarea[]             @relation("TareaAsignado")
   tareasCreadas          Tarea[]             @relation("TareaCreador")
+  verified                Boolean             @default(false)
+  verificationToken      String?             @db.VarChar(100)
+  resetPasswordToken     String?             @db.VarChar(100)
+  resetPasswordExpires   DateTime?
+  fechaRegistro          DateTime            @default(now()) @map("fecha_registro")
 }
 
 model Residuos {

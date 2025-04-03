@@ -24,6 +24,8 @@ const residuosRoutes = require("./src/routes/residuoRoutes");
 const planPagoRoutes = require("./src/routes/planesRoutes");
 const planPagoController = require("./src/controllers/planesController");
 const multimediaRoutes = require("./src/routes/multimediaRoutes");
+const googleAuthRoutes = require("./src/routes/googleAuthRoutes");
+const aauthRoutes = require("./src/routes/aauthRoutes");
 
 const logger = require("morgan");
 
@@ -40,7 +42,7 @@ app.use(cookieParser(COOKIE_SECRET));
 
 app.use(
   session({
-    secret: process.env.JWT_SECRET || "your_secret_key", // Usa una variable de entorno
+    secret: JWT_SECRET,
     resave: false,
     saveUninitialized: false,
   })
@@ -83,6 +85,9 @@ app.use("/api/plan-pagos", planPagoRoutes);
 app.use("/api/multimedia", multimediaRoutes);
 
 planPagoController.iniciarGeneracionAutomatica();
+
+// app.use("/api/google-auth", googleAuthRoutes);
+app.use("/api/aauth", aauthRoutes);
 // Rutas
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", oauthRoutes);
