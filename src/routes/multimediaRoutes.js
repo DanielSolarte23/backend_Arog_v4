@@ -4,7 +4,7 @@ const router = express.Router();
 const multimediaController = require('../controllers/multimediaController');
 
 // Verifica que los controladores estén definidos
-// console.log('Controladores disponibles:', Object.keys(multimediaController));
+console.log('Controladores disponibles:', Object.keys(multimediaController));
 
 // Rutas para Cloudinary
 router.get('/signature', multimediaController.getSignature);
