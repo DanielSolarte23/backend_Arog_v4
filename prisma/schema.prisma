@@ -391,7 +391,6 @@ model DocumentoPdf {
 }
 
 enum TipoDocumento {
-  FACTURA
   CERTIFICADO
   INFORME
 }

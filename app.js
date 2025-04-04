@@ -18,7 +18,6 @@ const formularioRoutes = require("./src/routes/formularioRoutes");
 const tareaRoutes = require("./src/routes/tareaRoutes");
 const pqrRoutes = require("./src/routes/pqrsRoutes");
 const clienteRoutes = require("./src/routes/clienteRoutes");
-// const multimediaRoutes = require("./src/routes/multimediaRoutes");
 const pagosRoutes = require("./src/routes/pagosRoutes");
 const residuosRoutes = require("./src/routes/residuoRoutes");
 const planPagoRoutes = require("./src/routes/planesRoutes");
@@ -26,6 +25,7 @@ const planPagoController = require("./src/controllers/planesController");
 const multimediaRoutes = require("./src/routes/multimediaRoutes");
 const googleAuthRoutes = require("./src/routes/googleAuthRoutes");
 const aauthRoutes = require("./src/routes/aauthRoutes");
+const documentoRoutes = require("./src/routes/documentoRoutes");
 
 const logger = require("morgan");
 
@@ -83,6 +83,7 @@ app.use("/api/pagos", pagosRoutes);
 app.use("/api/residuos", residuosRoutes);
 app.use("/api/plan-pagos", planPagoRoutes);
 app.use("/api/multimedia", multimediaRoutes);
+app.use("/api/documentos", documentoRoutes);
 
 planPagoController.iniciarGeneracionAutomatica();
 
