@@ -1,6 +1,7 @@
 
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
+const pdfParse = require('pdf-parse');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const os = require('os');
@@ -40,23 +41,27 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({ 
-  storage, 
-  fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 } // Límite de 10MB
-});
+// const upload = multer({ 
+//   storage, 
+//   fileFilter,
+//   limits: { fileSize: 10 * 1024 * 1024 } // Límite de 10MB
+// });
 
-// Obtener número de páginas de un PDF
-async function getNumPages(filePath) {
+const getNumPages = async (filePath) => {
   try {
-    const pdfBytes = fs.readFileSync(filePath);
-    const pdfDoc = await PDFDocument.load(pdfBytes);
-    return pdfDoc.getPageCount();
+    // Leer el archivo PDF
+    const dataBuffer = fs.readFileSync(filePath);
+    
+    // Usar pdf-parse para extraer información
+    const data = await pdfParse(dataBuffer);
+    
+    // pdf-parse proporciona el total de páginas en data.numpages
+    return data.numpages;
   } catch (error) {
-    console.error('Error al obtener el número de páginas:', error);
-    return 0;
+    console.error('Error al obtener número de páginas:', error);
+    return 1; // Valor predeterminado en caso de error
   }
-}
+};
 
 // Crear documento PDF
 const crearDocumentoPdf = async (req, res) => {
@@ -64,34 +69,66 @@ const crearDocumentoPdf = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No se ha proporcionado ningún archivo' });
     }
-
-    const { tipoDocumento, referenciaId } = req.body;
+    
+    const { tipoDocumento, referenciaId, subtipoCertificado } = req.body;
     
     // Validar tipo de documento
     const tiposDocumentoValidos = ['CERTIFICADO', 'INFORME'];
     if (!tiposDocumentoValidos.includes(tipoDocumento)) {
       return res.status(400).json({ error: 'Tipo de documento no válido' });
     }
-
-    // Validar referenciaId si se proporciona
-    if (referenciaId && isNaN(parseInt(referenciaId))) {
-      return res.status(400).json({ error: 'Referencia ID no válida' });
+    
+    // Validar subtipo según el tipo de documento
+    if (tipoDocumento === 'CERTIFICADO') {
+      const subtiposValidos = ['LABORAL', 'PARTICIPACION', 'CONOCIMIENTO'];
+      if (!subtipoCertificado || !subtiposValidos.includes(subtipoCertificado)) {
+        return res.status(400).json({ error: 'Subtipo de certificado no válido o no proporcionado' });
+      }
+    } else if (tipoDocumento === 'INFORME') {
+      const subtiposValidos = ['TECNICO', 'GESTION', 'EVALUACION'];
+      if (!subtipoCertificado || !subtiposValidos.includes(subtipoCertificado)) {
+        return res.status(400).json({ error: 'Subtipo de informe no válido o no proporcionado' });
+      }
     }
-
+    
+    // Validar referenciaId
+    if (!referenciaId) {
+      return res.status(400).json({ error: 'Referencias ID es obligatorio' });
+    }
+    
+    // Para informes, aceptamos referenciaId como string (código de informe)
+    let referenciaIdParsed;
+    if (tipoDocumento === 'CERTIFICADO') {
+      // Para certificados seguimos esperando un número (DNI)
+      if (isNaN(parseInt(referenciaId))) {
+        return res.status(400).json({ error: 'Referencia ID no válida para certificado (debe ser numérico)' });
+      }
+      referenciaIdParsed = parseInt(referenciaId);
+    } else {
+      // Para informes, usamos el código como está
+      referenciaIdParsed = referenciaId.toString();
+    }
+    
     // Obtener número de páginas del PDF
     const numPages = await getNumPages(req.file.path);
-
+    
+    // Crear carpeta en Cloudinary según el tipo y subtipo de documento
+    let folder = `documentos/${tipoDocumento.toLowerCase()}`;
+    if (subtipoCertificado) {
+      folder += `/${subtipoCertificado.toLowerCase()}`;
+    }
+    
     // Subir archivo a Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: `documentos/${tipoDocumento.toLowerCase()}`,
+      folder,
       resource_type: 'auto',
       use_filename: true,
       unique_filename: true
     });
-
+    
     // Eliminar archivo temporal después de subirlo
     fs.unlinkSync(req.file.path);
-
+    
     // Crear registro en la base de datos
     const nuevoPdf = await prisma.documentoPdf.create({
       data: {
@@ -101,23 +138,26 @@ const crearDocumentoPdf = async (req, res) => {
         tipoArchivo: req.file.mimetype,
         paginas: numPages,
         tipoDocumento: tipoDocumento,
-        referenciaId: referenciaId ? parseInt(referenciaId) : null
+        subtipoCertificado: subtipoCertificado || null,
+        referenciaId: tipoDocumento === 'CERTIFICADO' ? referenciaIdParsed : null,
+        codigoReferencia: tipoDocumento === 'INFORME' ? referenciaIdParsed : null
       }
     });
-
+    
     res.status(201).json(nuevoPdf);
   } catch (error) {
     // Verificar si es un error de restricción única
     if (error.code === 'P2002') {
-      return res.status(409).json({ 
-        error: 'Ya existe un documento con este tipo y referencia' 
+      return res.status(409).json({
+        error: 'Ya existe un documento con este tipo y referencia'
       });
     }
     
     console.error('Error al crear documento PDF:', error);
-    res.status(500).json({ error: 'Error al procesar el documento' });
+    res.status(500).json({ error: 'Error al procesar el documento: ' + error.message });
   }
 };
+
 
 // Obtener un documento por ID
 const obtenerDocumentoPorId = async (req, res) => {
@@ -240,7 +280,7 @@ const eliminarDocumento = async (req, res) => {
 };
 
 module.exports = {
-  upload,
+  // upload,
   crearDocumentoPdf,
   obtenerDocumentoPorId,
   obtenerDocumentosPorTipoYReferencia,

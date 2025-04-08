@@ -150,7 +150,7 @@ const googleLogout = async (req, res) => {
 
     res.redirect(
       `https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=${encodeURIComponent(
-        "http://localhost:5173"
+        "http://localhost:3000/secure/administrador"
       )}`
     );
   } catch (error) {

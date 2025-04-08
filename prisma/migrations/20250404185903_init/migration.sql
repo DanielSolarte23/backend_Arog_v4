@@ -12,6 +12,11 @@ CREATE TABLE `Usuario` (
     `historial_reciclaje` VARCHAR(100) NULL,
     `estado` ENUM('activo', 'inactivo') NOT NULL DEFAULT 'activo',
     `googleId` VARCHAR(100) NULL,
+    `verified` BOOLEAN NOT NULL DEFAULT false,
+    `verificationToken` VARCHAR(100) NULL,
+    `resetPasswordToken` VARCHAR(100) NULL,
+    `resetPasswordExpires` DATETIME(3) NULL,
+    `fecha_registro` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `Usuario_correo_electronico_key`(`correo_electronico`),
     PRIMARY KEY (`id`)
@@ -334,7 +339,7 @@ CREATE TABLE `DocumentoPdf` (
     `tipo_archivo` VARCHAR(50) NOT NULL,
     `paginas` INTEGER NULL,
     `fecha_subida` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `tipo_documento` ENUM('FACTURA', 'CERTIFICADO', 'INFORME') NOT NULL,
+    `tipo_documento` ENUM('CERTIFICADO', 'INFORME') NOT NULL,
     `referencia_id` INTEGER NULL,
 
     UNIQUE INDEX `DocumentoPdf_tipo_documento_referencia_id_key`(`tipo_documento`, `referencia_id`),

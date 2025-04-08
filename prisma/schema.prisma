@@ -8,18 +8,27 @@ datasource db {
 }
 
 model Usuario {
-  id                     Int                 @id @default(autoincrement())
-  nombres                String              @db.VarChar(200)
-  apellidos              String              @db.VarChar(200)
-  contraseña            String              @db.VarChar(255)
-  correoElectronico      String              @unique @map("correo_electronico") @db.VarChar(100)
-  telefono               String?             @db.VarChar(20)
-  rol                    Rol                 @default(ciudadano)
-  direccion              String?             @db.VarChar(50)
-  barrio                 String?             @db.VarChar(50)
-  historialReciclaje     String?             @map("historial_reciclaje") @db.VarChar(100)
-  estado                 EstadoCiudadano     @default(activo)
-  googleId               String?             @db.VarChar(100)
+  id                   Int             @id @default(autoincrement())
+  nombres              String          @db.VarChar(200)
+  apellidos            String          @db.VarChar(200)
+  contraseña          String          @db.VarChar(255)
+  correoElectronico    String          @unique @map("correo_electronico") @db.VarChar(100)
+  telefono             String?         @db.VarChar(20)
+  rol                  Rol             @default(ciudadano)
+  direccion            String?         @db.VarChar(50)
+  barrio               String?         @db.VarChar(50)
+  historialReciclaje   String?         @map("historial_reciclaje") @db.VarChar(100)
+  estado               EstadoCiudadano @default(activo)
+  googleId             String?         @db.VarChar(100)
+  verified             Boolean         @default(false)
+  verificationToken    String?         @db.VarChar(100)
+  resetPasswordToken   String?         @db.VarChar(100)
+  resetPasswordExpires DateTime?
+  fechaRegistro        DateTime        @default(now()) @map("fecha_registro")
+
+  // Relaciones nuevas y existentes
+  // certificados           Certificados[]
+  // informes               Informe[]
   incidenciasCiudadano   Incidencias[]       @relation("CiudadanoIncidencia")
   incidenciasCreadas     Incidencias[]       @relation("CreadorIncidencia")
   incidenciasAsignadas   Incidencias[]       @relation("UsuarioAsignado")
@@ -35,11 +44,6 @@ model Usuario {
   respuestasEncuestas    RespuestaEncuesta[] @relation("UsuarioEncuesta")
   tareasAsignadas        Tarea[]             @relation("TareaAsignado")
   tareasCreadas          Tarea[]             @relation("TareaCreador")
-  verified                Boolean             @default(false)
-  verificationToken      String?             @db.VarChar(100)
-  resetPasswordToken     String?             @db.VarChar(100)
-  resetPasswordExpires   DateTime?
-  fechaRegistro          DateTime            @default(now()) @map("fecha_registro")
 }
 
 model Residuos {
@@ -203,14 +207,14 @@ model ValorCampo {
 }
 
 model Multimedia {
-  id            Int     @id @default(autoincrement()) @map("id_multimedia")
-  url           String  @map("url_archivo") @db.VarChar(200)
-  nombreArchivo String  @map("nombre_archivo") @db.VarChar(150) 
-  tamanoArchivo Decimal @map("tamano_archivo") @db.Decimal(10, 2)
-  tipoArchivo   String  @map("tipo_archivo") @db.VarChar(50) 
-  ancho         Int?    @map("ancho") 
-  alto          Int?    @map("alto")  
-  fechaSubida   DateTime @map("fecha_subida") @default(now())
+  id            Int      @id @default(autoincrement()) @map("id_multimedia")
+  url           String   @map("url_archivo") @db.VarChar(200)
+  nombreArchivo String   @map("nombre_archivo") @db.VarChar(150)
+  tamanoArchivo Decimal  @map("tamano_archivo") @db.Decimal(10, 2)
+  tipoArchivo   String   @map("tipo_archivo") @db.VarChar(50)
+  ancho         Int?     @map("ancho")
+  alto          Int?     @map("alto")
+  fechaSubida   DateTime @default(now()) @map("fecha_subida")
 }
 
 model Incidencias {
@@ -234,75 +238,72 @@ model Incidencias {
 // More information: https://pris.ly/d/prisma-schema
 
 model Cliente {
-  id            Int      @id @default(autoincrement()) @map("id_cliente")
-  nombre        String   @db.VarChar(100)
-  apellido      String   @db.VarChar(100)
-  correo        String   @unique @db.VarChar(150)
-  telefono      String   @db.VarChar(20)
+  id            Int        @id @default(autoincrement()) @map("id_cliente")
+  nombre        String     @db.VarChar(100)
+  apellido      String     @db.VarChar(100)
+  correo        String     @unique @db.VarChar(150)
+  telefono      String     @db.VarChar(20)
   direccion     String?
-  fechaRegistro DateTime @default(now()) @map("fecha_registro")
+  fechaRegistro DateTime   @default(now()) @map("fecha_registro")
   // Eliminamos fechaPagoFijo ya que esto se manejará en cada plan de pago
-  activo        Boolean  @default(true)
+  activo        Boolean    @default(true)
   planes        PlanPago[]
   pagos         Pago[]
 }
 
 // Nuevo modelo para manejar planes de pago recurrentes
 model PlanPago {
-  id               Int       @id @default(autoincrement()) @map("id_plan")
-  idCliente        Int       @map("id_cliente")
-  descripcion      String    @db.VarChar(200)
-  montoPeriodico   Decimal   @map("monto_periodico") @db.Decimal(10, 2)
-  diaPago          Int       @map("dia_pago") // Día del mes para el pago (1-31)
-  periodicidad     Periodicidad @default(mensual) // Frecuencia de pago
-  fechaInicio      DateTime  @map("fecha_inicio") @db.Date
-  fechaFin         DateTime? @map("fecha_fin") @db.Date // Null si es indefinido
-  activo           Boolean   @default(true)
-  cliente          Cliente   @relation(fields: [idCliente], references: [id], onDelete: Cascade)
-  pagos            Pago[]    // Relación con los pagos generados por este plan
+  id             Int          @id @default(autoincrement()) @map("id_plan")
+  idCliente      Int          @map("id_cliente")
+  descripcion    String       @db.VarChar(200)
+  montoPeriodico Decimal      @map("monto_periodico") @db.Decimal(10, 2)
+  diaPago        Int          @map("dia_pago") // Día del mes para el pago (1-31)
+  periodicidad   Periodicidad @default(mensual) // Frecuencia de pago
+  fechaInicio    DateTime     @map("fecha_inicio") @db.Date
+  fechaFin       DateTime?    @map("fecha_fin") @db.Date // Null si es indefinido
+  activo         Boolean      @default(true)
+  cliente        Cliente      @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+  pagos          Pago[] // Relación con los pagos generados por este plan
 }
 
-
 model Pago {
-  id                 Int         @id @default(autoincrement()) @map("id_pago")
-  idCliente          Int         @map("id_cliente")
-  idPlanPago         Int?        @map("id_plan") // Opcional, si está vinculado a un plan
-  descripcion        String      @db.VarChar(200)
-  fechaEmision       DateTime    @default(now()) @map("fecha_emision") // Cuándo se generó el cobro
-  fechaVencimiento   DateTime    @map("fecha_vencimiento") @db.Date // Fecha límite de pago
-  montoPago          Decimal     @map("monto_pago") @db.Decimal(10, 2) // Monto total a pagar
-  
+  id               Int      @id @default(autoincrement()) @map("id_pago")
+  idCliente        Int      @map("id_cliente")
+  idPlanPago       Int?     @map("id_plan") // Opcional, si está vinculado a un plan
+  descripcion      String   @db.VarChar(200)
+  fechaEmision     DateTime @default(now()) @map("fecha_emision") // Cuándo se generó el cobro
+  fechaVencimiento DateTime @map("fecha_vencimiento") @db.Date // Fecha límite de pago
+  montoPago        Decimal  @map("monto_pago") @db.Decimal(10, 2) // Monto total a pagar
 
-  transacciones      Transaccion[]
-  
+  transacciones Transaccion[]
 
-  montoPagado        Decimal     @default(0.00) @map("monto_pagado") @db.Decimal(10, 2)
-  saldoPendiente     Decimal     @default(0.00) @map("saldo_pendiente") @db.Decimal(10, 2)
-  interesMora        Decimal     @default(0.00) @map("interes_mora") @db.Decimal(10, 2)
-  diasMora           Int         @default(0) @map("dias_mora")
-  estadoPago         EstadoPago  @default(pendiente) @map("estado_pago")
-  
+  montoPagado    Decimal    @default(0.00) @map("monto_pagado") @db.Decimal(10, 2)
+  saldoPendiente Decimal    @default(0.00) @map("saldo_pendiente") @db.Decimal(10, 2)
+  interesMora    Decimal    @default(0.00) @map("interes_mora") @db.Decimal(10, 2)
+  diasMora       Int        @default(0) @map("dias_mora")
+  estadoPago     EstadoPago @default(pendiente) @map("estado_pago")
+
   // Referencias
-  cliente            Cliente     @relation(fields: [idCliente], references: [id], onDelete: Cascade)
-  planPago           PlanPago?   @relation(fields: [idPlanPago], references: [id], onDelete: SetNull)
-  
+  cliente  Cliente   @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+  planPago PlanPago? @relation(fields: [idPlanPago], references: [id], onDelete: SetNull)
+
   // Otros campos útiles
-  notas              String?     @db.VarChar(500)
-  ultimaActualizacion DateTime   @default(now()) @updatedAt @map("ultima_actualizacion")
+  notas               String?  @db.VarChar(500)
+  ultimaActualizacion DateTime @default(now()) @updatedAt @map("ultima_actualizacion")
 }
 
 // Nuevo modelo para registrar cada transacción de pago
 model Transaccion {
-  id           Int        @id @default(autoincrement()) @map("id_transaccion")  
-  idPago       Int        @map("id_pago")
-  fechaPago    DateTime   @default(now()) @map("fecha_pago")
-  monto        Decimal    @db.Decimal(10, 2)
-  metodoPago   MetodoPago @map("metodo_pago")
-  referencia   String?    @db.VarChar(100) // Referencia de transacción
-  comprobante  String?    @db.VarChar(255) // Ruta de archivo del comprobante
-  
+  id          Int        @id @default(autoincrement()) @map("id_transaccion")
+  idPago      Int        @map("id_pago")
+  fechaPago   DateTime   @default(now()) @map("fecha_pago")
+  monto       Decimal    @db.Decimal(10, 2)
+  metodoPago  MetodoPago @map("metodo_pago")
+  referencia  String?    @db.VarChar(100) // Referencia de transacción
+  comprobante String?    @db.VarChar(255) // Ruta de archivo del comprobante
+
   // Referencias
-  pago         Pago       @relation(fields: [idPago], references: [id], onDelete: Cascade)
+  pago Pago @relation(fields: [idPago], references: [id], onDelete: Cascade)
 }
 
 model Tarea {
@@ -374,25 +375,61 @@ model VehiculosAsignados {
   vehiculo        Vehiculos @relation(fields: [idVehiculo], references: [id], onDelete: Cascade)
 }
 
-
 model DocumentoPdf {
-  id            Int      @id @default(autoincrement()) @map("id_pdf")
-  url           String   @map("url_archivo") @db.VarChar(200)
-  nombreArchivo String   @map("nombre_archivo") @db.VarChar(150)
-  tamanoArchivo Decimal  @map("tamano_archivo") @db.Decimal(10, 2)
-  tipoArchivo   String   @map("tipo_archivo") @db.VarChar(50) // "application/pdf"
-  paginas       Int?     @map("paginas")
-  fechaSubida   DateTime @map("fecha_subida") @default(now())
+  id                 Int       @id @default(autoincrement())
+  url                String
+  nombreArchivo      String
+  tamanoArchivo      Float
+  tipoArchivo        String
+  paginas            Int
+  tipoDocumento      String    // CERTIFICADO, INFORME
+  subtipoCertificado String?   // LABORAL, PARTICIPACION, CONOCIMIENTO, TECNICO, GESTION, EVALUACION
+  referenciaId       Int?      // Para certificados (DNI)
+  codigoReferencia   String?   // Para informes (código/número de informe)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  tipoDocumento TipoDocumento @map("tipo_documento")  // Ahora es un ENUM
-  referenciaId  Int?          @map("referencia_id")   // Relaciona con pagos, informes, certificados
-
-  @@unique([tipoDocumento, referenciaId]) // Garantiza que solo haya un PDF por tipo para cada referencia
+  @@unique([tipoDocumento, referenciaId, codigoReferencia])
 }
 
+// model Certificados {
+//   id                 Int           @id @default(autoincrement())
+//   nombreParticipante String        @db.VarChar(100)
+//   documento          String        @db.VarChar(20)
+//   fechaParticipacion DateTime
+//   nombreActividad    String        @default("Verde por un Futuro") @db.VarChar(100)
+//   lugar              String        @default("Popayán, Colombia") @db.VarChar(100)
+//   organizacion       String        @default("Asociacion de recicladores de oficio GOLEROS") @db.VarChar(100)
+//   textoCertificado   String?       @db.Text
+//   nombreFirma        String        @default("Nombre del responsable") @db.VarChar(100)
+//   cargoFirma         String        @default("Coordinador General - AROG") @db.VarChar(100)
+//   fechaEmision       DateTime
+//   codigoCertificado  String        @unique @db.VarChar(50)
+//   usuarioId          Int? // Puede ser null si no se asigna
+//   usuario            Usuario?      @relation(fields: [usuarioId], references: [id])
+//   documentoPdf       DocumentoPdf? @relation(fields: [documentoPdfId], references: [id])
+//   documentoPdfId     Int?          @map("documento_pdf_id")
+// }
+
+// model Informe {
+//   id            Int      @id @default(autoincrement())
+//   titulo        String   @db.VarChar(150)
+//   descripcion   String   @db.Text
+//   contenido     String   @db.Text // Texto completo del informe
+//   autor         String   @db.VarChar(100)
+//   fechaCreacion DateTime @default(now()) @map("fecha_creacion")
+//   tipoInforme   String   @db.VarChar(50) // Ej: "Ambiental", "Social", etc.
+//   usuarioId     Int? // Relación opcional con Usuario
+//   usuario       Usuario? @relation(fields: [usuarioId], references: [id])
+
+//   // Relación con el documento PDF (opcional)
+//   documentoPdf   DocumentoPdf? @relation(fields: [documentoPdfId], references: [id])
+//   documentoPdfId Int?          @map("documento_pdf_id")
+// }
+
 enum TipoDocumento {
-  CERTIFICADO
-  INFORME
+  informe
+  certificado
 }
 
 enum Rol {
@@ -495,7 +532,6 @@ enum EstadoIncidencia {
   en_progreso
   cerrada
 }
-
 
 enum FrecuenciaPago {
   mensual
