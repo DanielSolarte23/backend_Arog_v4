@@ -133,7 +133,7 @@ const verifyEmail = async (req, res) => {
         <div class="card">
           <h1> ¡Verificación exitosa!</h1>
           <p>Hola ${usuario.nombres || ''}, tu correo ha sido verificado correctamente.</p>
-          <a class="btn" href="http://localhost:3000/auth/inicio">Ir al inicio</a>
+          <a class="btn" href="https://frontend-arog-v4-j85o9cfhv-royersolarte22-gmailcoms-projects.vercel.app/auth/inicio">Ir al inicio</a>
         </div>
       </body>
       </html>

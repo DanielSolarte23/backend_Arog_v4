@@ -25,10 +25,6 @@ model Usuario {
   resetPasswordToken   String?         @db.VarChar(100)
   resetPasswordExpires DateTime?
   fechaRegistro        DateTime        @default(now()) @map("fecha_registro")
-
-  // Relaciones nuevas y existentes
-  // certificados           Certificados[]
-  // informes               Informe[]
   incidenciasCiudadano   Incidencias[]       @relation("CiudadanoIncidencia")
   incidenciasCreadas     Incidencias[]       @relation("CreadorIncidencia")
   incidenciasAsignadas   Incidencias[]       @relation("UsuarioAsignado")
