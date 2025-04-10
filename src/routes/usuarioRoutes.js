@@ -10,3 +10,4 @@ router.put('/:id', usuarioController.actualizarUsuario);
 router.delete('/:id', usuarioController.eliminarUsuario);
 
 module.exports = router;
+
