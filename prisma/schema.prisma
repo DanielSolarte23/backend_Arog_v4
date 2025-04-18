@@ -25,6 +25,10 @@ model Usuario {
   resetPasswordToken   String?         @db.VarChar(100)
   resetPasswordExpires DateTime?
   fechaRegistro        DateTime        @default(now()) @map("fecha_registro")
+
+  // Relaciones nuevas y existentes
+  // certificados           Certificados[]
+  // informes               Informe[]
   incidenciasCiudadano   Incidencias[]       @relation("CiudadanoIncidencia")
   incidenciasCreadas     Incidencias[]       @relation("CreadorIncidencia")
   incidenciasAsignadas   Incidencias[]       @relation("UsuarioAsignado")
@@ -378,50 +382,15 @@ model DocumentoPdf {
   tamanoArchivo      Float
   tipoArchivo        String
   paginas            Int
-  tipoDocumento      String    // CERTIFICADO, INFORME
+  tipoDocumento      String    
   subtipoCertificado String?   // LABORAL, PARTICIPACION, CONOCIMIENTO, TECNICO, GESTION, EVALUACION
-  referenciaId       Int?      // Para certificados (DNI)
-  codigoReferencia   String?   // Para informes (código/número de informe)
+  referenciaId       Int?      
+  codigoReferencia   String?  
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
   @@unique([tipoDocumento, referenciaId, codigoReferencia])
 }
-
-// model Certificados {
-//   id                 Int           @id @default(autoincrement())
-//   nombreParticipante String        @db.VarChar(100)
-//   documento          String        @db.VarChar(20)
-//   fechaParticipacion DateTime
-//   nombreActividad    String        @default("Verde por un Futuro") @db.VarChar(100)
-//   lugar              String        @default("Popayán, Colombia") @db.VarChar(100)
-//   organizacion       String        @default("Asociacion de recicladores de oficio GOLEROS") @db.VarChar(100)
-//   textoCertificado   String?       @db.Text
-//   nombreFirma        String        @default("Nombre del responsable") @db.VarChar(100)
-//   cargoFirma         String        @default("Coordinador General - AROG") @db.VarChar(100)
-//   fechaEmision       DateTime
-//   codigoCertificado  String        @unique @db.VarChar(50)
-//   usuarioId          Int? // Puede ser null si no se asigna
-//   usuario            Usuario?      @relation(fields: [usuarioId], references: [id])
-//   documentoPdf       DocumentoPdf? @relation(fields: [documentoPdfId], references: [id])
-//   documentoPdfId     Int?          @map("documento_pdf_id")
-// }
-
-// model Informe {
-//   id            Int      @id @default(autoincrement())
-//   titulo        String   @db.VarChar(150)
-//   descripcion   String   @db.Text
-//   contenido     String   @db.Text // Texto completo del informe
-//   autor         String   @db.VarChar(100)
-//   fechaCreacion DateTime @default(now()) @map("fecha_creacion")
-//   tipoInforme   String   @db.VarChar(50) // Ej: "Ambiental", "Social", etc.
-//   usuarioId     Int? // Relación opcional con Usuario
-//   usuario       Usuario? @relation(fields: [usuarioId], references: [id])
-
-//   // Relación con el documento PDF (opcional)
-//   documentoPdf   DocumentoPdf? @relation(fields: [documentoPdfId], references: [id])
-//   documentoPdfId Int?          @map("documento_pdf_id")
-// }
 
 enum TipoDocumento {
   informe
