@@ -45,7 +45,6 @@ router.get(
   })
 );
 
-// Callback de Google
 router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
@@ -55,13 +54,19 @@ router.get(
 
       res.cookie("token", result.token);
 
-      //Redireccion al front despues de la autenticacion
-      res.redirect(`https://frontend-arog-v4-j85o9cfhv-royersolarte22-gmailcoms-projects.vercel.app/secure/administrador`);
+      const isDev = process.env.NODE_ENV !== "production";
+      const frontendURL = isDev ? process.env.FRONTEND_URL : process.env.FRONTEND_URL_PROD;
+
+      res.redirect(`${frontendURL}/secure/administrador`);
     } catch (error) {
-      res.redirect("https://frontend-arog-v4-j85o9cfhv-royersolarte22-gmailcoms-projects.vercel.app/notfound");
+      const isDev = process.env.NODE_ENV !== "production";
+      const frontendURL = isDev ? process.env.FRONTEND_URL : process.env.FRONTEND_URL_PROD;
+
+      res.redirect(`${frontendURL}/notfound`);
     }
   }
 );
+
 
 router.post("/google/logout", googleLogout);
 
