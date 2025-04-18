@@ -54,7 +54,12 @@ router.get(
     try {
       const result = await googleCallback(req, req.user);
 
-      res.cookie("token", result.token);
+      res.cookie("token", result.token, {
+        httpOnly: true,          // Oculta la cookie del frontend (buena práctica de seguridad)
+        secure: true,            // Obligatorio en HTTPS (Vercel y Render lo son)
+        sameSite: "None",        // Permite que la cookie viaje entre dominios distintos
+      });
+      
 
       //Redireccion al front despues de la autenticacion
       res.redirect(`https://frontend-arog-v4.vercel.app/secure/administrador`);
