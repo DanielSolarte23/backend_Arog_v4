@@ -472,16 +472,10 @@ ALTER TABLE "valor_campos" ADD CONSTRAINT "valor_campos_campoFormularioId_fkey" 
 ALTER TABLE "valor_campos" ADD CONSTRAINT "valor_campos_formularioId_fkey" FOREIGN KEY ("formularioId") REFERENCES "formularios"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Incidencias" ADD CONSTRAINT "Incidencias_id_usuario_ciudadano_fkey" FOREIGN KEY ("id_usuario_ciudadano") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Incidencias" ADD CONSTRAINT "Incidencias_id_usuario_creador_fkey" FOREIGN KEY ("id_usuario_creador") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Incidencias" ADD CONSTRAINT "Incidencias_id_usuario_fkey" FOREIGN KEY ("id_usuario") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Incidencias" ADD CONSTRAINT "Incidencias_id_usuario_modificador_fkey" FOREIGN KEY ("id_usuario_modificador") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PlanPago" ADD CONSTRAINT "PlanPago_id_cliente_fkey" FOREIGN KEY ("id_cliente") REFERENCES "Cliente"("id_cliente") ON DELETE CASCADE ON UPDATE CASCADE;
