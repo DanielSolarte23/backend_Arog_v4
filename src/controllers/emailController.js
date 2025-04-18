@@ -10,46 +10,63 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 const sendVerificationEmail = async (usuario, host) => {
-  const verificationToken = crypto.randomBytes(32).toString("hex");
+  try {
+    const verificationToken = crypto.randomBytes(32).toString("hex");
 
-  await prisma.usuario.update({
-    where: { id: usuario.id },
-    data: { verificationToken: verificationToken },
-  });
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { verificationToken: verificationToken },
+    });
 
-  const verificationLink = `http://${host}/api/aauth/verify-email/${verificationToken}`;
+    // Determinar el protocolo y URL base basado en entorno
+    const baseUrl =
+      process.env.NODE_ENV === "production"
+        ? process.env.PRODUCTION_URL || `https://${host}`
+        : `http://${host}`;
 
-  const logoUrl = 'https://res.cloudinary.com/dob9hff6e/image/upload/v1744251421/mi_galeria/cdkv76neaq7gqqvcawdw.png';
+    const verificationLink = `${baseUrl}/api/aauth/verify-email/${verificationToken}`;
+    const appUrl =
+      process.env.NODE_ENV === "production"
+        ? process.env.FRONTEND_URL || "https://tu-app.com"
+        : "http://localhost:3000";
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: usuario.correoElectronico,
-    subject: "¡Bienvenido! Verifica tu correo electrónico",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f4f4f4; border-radius: 10px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <img src="${logoUrl}" alt="Logo" style="max-width: 50px; height: auto;" />
+    const logoUrl =
+      "https://res.cloudinary.com/dob9hff6e/image/upload/v1744251421/mi_galeria/cdkv76neaq7gqqvcawdw.png";
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: usuario.correoElectronico,
+      subject: "¡Bienvenido! Verifica tu correo electrónico",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f4f4f4; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${logoUrl}" alt="Logo" style="max-width: 50px; height: auto;" />
+          </div>
+          <h2 style="color: #72aa00;">Hola ${usuario.nombres || ""}</h2>
+          <p style="color: #181d27;">
+            Gracias por registrarte. Para completar tu registro y asegurarnos de que eres tú, por favor verifica tu dirección de correo electrónico haciendo clic en el botón de abajo:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationLink}" style="display: inline-block; padding: 12px 20px; background-color: #181d27; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              Verificar mi correo
+            </a>
+          </div>
+          <p style="color: #999; font-size: 12px;">
+            Si no fuiste tú quien solicitó esta verificación, puedes ignorar este mensaje.
+          </p>
+          <p style="color: #bbb; font-size: 12px;">
+            — El equipo de soporte
+          </p>
         </div>
-        <h2 style="color: #72aa00;">Hola ${usuario.nombre || ''}</h2>
-        <p style="color: #181d27;">
-          Gracias por registrarte. Para completar tu registro y asegurarnos de que eres tú, por favor verifica tu dirección de correo electrónico haciendo clic en el botón de abajo:
-        </p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${verificationLink}" style="display: inline-block; padding: 12px 20px; background-color: #181d27; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
-            Verificar mi correo
-          </a>
-        </div>
-        <p style="color: #999; font-size: 12px;">
-          Si no fuiste tú quien solicitó esta verificación, puedes ignorar este mensaje.
-        </p>
-        <p style="color: #bbb; font-size: 12px;">
-          — El equipo de soporte
-        </p>
-      </div>
-    `,
-  };
+      `,
+    };
 
-  await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
+    console.log("Correo de verificación enviado a:", usuario.correoElectronico);
+  } catch (error) {
+    console.error("Error al enviar correo de verificación:", error);
+    throw error;
+  }
 };
 
 const verifyEmail = async (req, res) => {
@@ -60,8 +77,15 @@ const verifyEmail = async (req, res) => {
     });
 
     if (!usuario) {
-      return res.status(400).json({ message: "Token de verificación inválido" });
+      return res
+        .status(400)
+        .json({ message: "Token de verificación inválido" });
     }
+
+    const appUrl =
+      process.env.NODE_ENV === "production"
+        ? process.env.FRONTEND_URL || "https://tu-app-en-produccion.com"
+        : "http://localhost:3000";
 
     await prisma.usuario.update({
       where: { id: usuario.id },
@@ -132,13 +156,14 @@ const verifyEmail = async (req, res) => {
       <body>
         <div class="card">
           <h1> ¡Verificación exitosa!</h1>
-          <p>Hola ${usuario.nombres || ''}, tu correo ha sido verificado correctamente.</p>
-          <a class="btn" href="http://localhost:3000/auth/inicio">Ir al inicio</a>
+          <p>Hola ${
+            usuario.nombres || ""
+          }, tu correo ha sido verificado correctamente.</p>
+          <a class="btn" href="${appUrl}/auth/inicio">Ir al inicio</a>
         </div>
       </body>
       </html>
     `);
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -181,7 +206,9 @@ const requestPasswordReset = async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    res.json({ message: "Se ha enviado un enlace de restablecimiento a tu correo" });
+    res.json({
+      message: "Se ha enviado un enlace de restablecimiento a tu correo",
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
     console.log(error);

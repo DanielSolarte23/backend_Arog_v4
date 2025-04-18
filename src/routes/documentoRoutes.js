@@ -9,7 +9,8 @@ const {
   obtenerDocumentosPorTipoYReferencia,
   actualizarDocumento,
   eliminarDocumento,
-  // upload,
+  obtenerInformes,
+  obtenerCertificados
 } = require("../controllers/documentoController");
 
 const router = express.Router();
@@ -52,8 +53,10 @@ const upload = multer({
 // Rutas para documentos PDF
 router.post("/", upload.single("file"), crearDocumentoPdf);
 // router.post("/", upload.single("archivo"), crearDocumentoPdf);
-router.get("/:id", obtenerDocumentoPorId);
+router.get("/doc/:id", obtenerDocumentoPorId);
 router.get("/", obtenerDocumentosPorTipoYReferencia);
+router.get('/informes', obtenerInformes);
+router.get('/certificados', obtenerCertificados);
 router.put("/:id", actualizarDocumento);
 router.delete("/:id", eliminarDocumento);
 
