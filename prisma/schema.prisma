@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -29,10 +29,8 @@ model Usuario {
   // Relaciones nuevas y existentes
   // certificados           Certificados[]
   // informes               Informe[]
-  incidenciasCiudadano   Incidencias[]       @relation("CiudadanoIncidencia")
   incidenciasCreadas     Incidencias[]       @relation("CreadorIncidencia")
   incidenciasAsignadas   Incidencias[]       @relation("UsuarioAsignado")
-  incidenciasModificadas Incidencias[]       @relation("ModificadorIncidencia")
   pqrsRecibidas          Pqrs[]              @relation("CiudadanoPqrs")
   pqrsCreadas            Pqrs[]              @relation("CreadorPqrs")
   pqrsModificadas        Pqrs[]              @relation("ModificadorPqrs")
@@ -228,14 +226,9 @@ model Incidencias {
   idUsuarioCiudadano    Int?             @map("id_usuario_ciudadano")
   idUsuarioCreador      Int              @map("id_usuario_creador")
   idUsuarioModificador  Int?             @map("id_usuario_modificador")
-  ciudadano             Usuario?         @relation("CiudadanoIncidencia", fields: [idUsuarioCiudadano], references: [id])
   creador               Usuario          @relation("CreadorIncidencia", fields: [idUsuarioCreador], references: [id])
   usuarioAsignado       Usuario?         @relation("UsuarioAsignado", fields: [idUsuario], references: [id])
-  modificador           Usuario?         @relation("ModificadorIncidencia", fields: [idUsuarioModificador], references: [id])
 }
-
-// This is a Prisma schema file
-// More information: https://pris.ly/d/prisma-schema
 
 model Cliente {
   id            Int        @id @default(autoincrement()) @map("id_cliente")
@@ -251,7 +244,6 @@ model Cliente {
   pagos         Pago[]
 }
 
-// Nuevo modelo para manejar planes de pago recurrentes
 model PlanPago {
   id             Int          @id @default(autoincrement()) @map("id_plan")
   idCliente      Int          @map("id_cliente")
@@ -283,16 +275,15 @@ model Pago {
   diasMora       Int        @default(0) @map("dias_mora")
   estadoPago     EstadoPago @default(pendiente) @map("estado_pago")
 
-  // Referencias
+
   cliente  Cliente   @relation(fields: [idCliente], references: [id], onDelete: Cascade)
   planPago PlanPago? @relation(fields: [idPlanPago], references: [id], onDelete: SetNull)
 
-  // Otros campos útiles
+
   notas               String?  @db.VarChar(500)
   ultimaActualizacion DateTime @default(now()) @updatedAt @map("ultima_actualizacion")
 }
 
-// Nuevo modelo para registrar cada transacción de pago
 model Transaccion {
   id          Int        @id @default(autoincrement()) @map("id_transaccion")
   idPago      Int        @map("id_pago")

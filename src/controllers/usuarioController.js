@@ -9,12 +9,7 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{8,}$/; 
 const usuarioController = {
   async crearUsuario(req, res) {
     try {
-      const { nombres, apellidos, nombreDeUsuario, contraseña, correoElectronico, telefono, rol } = req.body;
-
-      // Validar nombre de usuario
-      if (!usernameRegex.test(nombreDeUsuario)) {
-        return res.status(400).json({ error: 'El nombre de usuario no es válido. Debe tener entre 3 y 20 caracteres y solo puede contener letras, números, guiones o guiones bajos.' });
-      }
+      const { nombres, apellidos, direccion, contraseña, correoElectronico, telefono, rol } = req.body;
 
       // Validar correo electrónico
       if (!emailRegex.test(correoElectronico)) {
@@ -24,7 +19,7 @@ const usuarioController = {
       // Validar que el nombre de usuario y el correo sean únicos
       const existingUser = await prisma.usuario.findFirst({
         where: {
-          OR: [{ nombreDeUsuario }, { correoElectronico }]
+          OR: [{ correoElectronico }]
         }
       });
 
@@ -46,11 +41,12 @@ const usuarioController = {
         data: {
           nombres,
           apellidos,
-          nombreDeUsuario,
+          direccion,
           contraseña: hashedPassword,
+          direccion,
           correoElectronico,
           telefono,
-          rol
+          rol 
         }
       });
       
