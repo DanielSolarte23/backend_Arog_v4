@@ -60,7 +60,7 @@ const googleCallback = async (req, usuario) => {
       usuario: {
         id: userFound.id,
         nombres: userFound.nombres,
-        apellidos: userFound.apellidos, 
+        apellidos: userFound.apellidos, // Añadimos apellidos a la respuesta
         correoElectronico: userFound.correoElectronico,
         rol: userFound.rol || "ciudadano"
       },

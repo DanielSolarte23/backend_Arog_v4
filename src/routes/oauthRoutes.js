@@ -1,3 +1,4 @@
+
 const express = require("express");
 const passport = require("passport");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
@@ -45,34 +46,20 @@ router.get(
   })
 );
 
+// Callback de Google
 router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   async (req, res) => {
     try {
       const result = await googleCallback(req, req.user);
-      
-      const isDev = process.env.NODE_ENV !== "production";
-      const frontendURL = isDev ? process.env.FRONTEND_URL : process.env.FRONTEND_URL_PROD;
-      
-      // Extraer el dominio del frontend
-      const frontendDomain = new URL(frontendURL).hostname;
-      
-      // Configurar la cookie con las opciones adecuadas
-      res.cookie("token", result.token, {
-        httpOnly: true,           // Previene acceso desde JavaScript
-        secure: !isDev,           // Solo HTTPS en producción
-        sameSite: 'lax',          // Configuración para redirecciones cross-site
-        domain: frontendDomain,   // Establecer dominio para compartir cookie
-        maxAge: 24 * 60 * 60 * 1000  // Expiración (24 horas en este ejemplo)
-      });
 
-      res.redirect(`${frontendURL}/secure/administrador`);
+      res.cookie("token", result.token);
+
+      //Redireccion al front despues de la autenticacion
+      res.redirect(`https://frontend-arog-v4.vercel.app/secure/administrador`);
     } catch (error) {
-      console.error("Error en callback de Google:", error);
-      const isDev = process.env.NODE_ENV !== "production";
-      const frontendURL = isDev ? process.env.FRONTEND_URL : process.env.FRONTEND_URL_PROD;
-      res.redirect(`${frontendURL}/notfound`);
+      res.redirect("https://frontend-arog-v4.vercel.app/notfound");
     }
   }
 );
