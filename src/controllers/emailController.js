@@ -191,7 +191,7 @@ const requestPasswordReset = async (req, res) => {
       },
     });
 
-    const resetLink = `${process.env.CORS_ORIGIN}/reset-contraseña/${resetToken}`;
+    const resetLink = `${process.env.CORS_ORIGIN}/auth/reset-password/${resetToken}`;
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
@@ -216,11 +216,13 @@ const requestPasswordReset = async (req, res) => {
 };
 
 const resetPassword = async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { contraseña } = req.body;
+  let token;
+  let usuario;
 
-    const usuario = await prisma.usuario.findFirst({
+  try {
+    token = req.params.token;
+
+    usuario = await prisma.usuario.findFirst({
       where: {
         resetPasswordToken: token,
         resetPasswordExpires: { gt: new Date(Date.now()) },
@@ -233,7 +235,9 @@ const resetPassword = async (req, res) => {
         .json({ message: "Token de restablecimiento inválido o expirado" });
     }
 
-    const passwordHash = await bcrypt.hash(contraseña, 10);
+    const { password } = req.body;
+
+    const passwordHash = await bcrypt.hash(password, 10);
 
     await prisma.usuario.update({
       where: { id: usuario.id },
@@ -245,10 +249,17 @@ const resetPassword = async (req, res) => {
     });
 
     res.json({ message: "Contraseña actualizada exitosamente" });
+
+    console.log("Token recibido:", token);
+    console.log("Usuario encontrado:", usuario);
   } catch (error) {
+    console.error("Error en resetPassword:", error);
+    console.log("Token recibido (en catch):", token);
+    console.log("Usuario encontrado (en catch):", usuario);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 module.exports = {
   sendVerificationEmail,
